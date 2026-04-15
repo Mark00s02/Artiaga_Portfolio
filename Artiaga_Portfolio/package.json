@@ -1,0 +1,16 @@
+{
+  "name": "mark00s-portfolio",
+  "version": "2.0.0",
+  "description": "Mark00s Portfolio — Full Stack & Game Dev",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "nedb-promises": "^6.2.1",
+    "node-fetch": "^3.3.2"
+  }
+}

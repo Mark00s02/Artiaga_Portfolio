@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mark00s — Full Stack & Game Developer</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:ital,wght@0,200;0,400;0,700;1,200&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-logo" onclick="navigate('home')">
+    <span class="bracket">[</span>Mark00s<span class="bracket">]</span>
+  </div>
+  <ul class="nav-links">
+    <li><a onclick="navigate('home')" class="nav-link active" data-index="00">Home</a></li>
+    <li><a onclick="navigate('about')" class="nav-link" data-index="01">About</a></li>
+    <li><a onclick="navigate('works')" class="nav-link" data-index="02">Works</a></li>
+    <li><a onclick="navigate('reviews')" class="nav-link" data-index="03">Reviews</a></li>
+  </ul>
+  <a onclick="navigate('reviews')" class="nav-cta">// HIRE_ME</a>
+  <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a onclick="navigate('home');toggleMenu()"><span class="mm-idx">00.</span> Home</a>
+  <a onclick="navigate('about');toggleMenu()"><span class="mm-idx">01.</span> About</a>
+  <a onclick="navigate('works');toggleMenu()"><span class="mm-idx">02.</span> Works</a>
+  <a onclick="navigate('reviews');toggleMenu()"><span class="mm-idx">03.</span> Reviews</a>
+</div>
+
+<!-- ===== HOME ===== -->
+<div id="page-home" class="page active">
+  <section class="hero">
+    <canvas id="matrixCanvas"></canvas>
+    <div class="hero-grid-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-prompt">
+        <span class="prompt-user">mark00s@dev</span><span class="prompt-sep">:</span><span class="prompt-path">~/portfolio</span><span class="prompt-dollar">$</span>
+        <span class="prompt-cmd" id="typedCmd"></span><span class="cursor-blink">█</span>
+      </div>
+      <h1 class="hero-title">
+        <span class="title-line">FULL STACK</span>
+        <span class="title-line accent-text">&amp; GAME DEV</span>
+      </h1>
+      <p class="hero-sub">Building digital experiences that blur the line between web and game. Code that performs. Worlds that immerse.</p>
+      <div class="hero-btns">
+        <button onclick="navigate('works')" class="btn-primary"><span class="btn-icon">▶</span> View Projects</button>
+        <button onclick="navigate('about')" class="btn-ghost">cat about.txt →</button>
+      </div>
+      <div class="hero-stack">
+        <span class="stack-label">// tech_stack:</span>
+        <div class="stack-pills" id="heroStack"></div>
+      </div>
+    </div>
+    <div class="hero-terminal">
+      <div class="terminal-bar">
+        <span class="t-dot tdred"></span><span class="t-dot tdyellow"></span><span class="t-dot tdgreen"></span>
+        <span class="t-title">mark00s.sh</span>
+      </div>
+      <div class="terminal-body" id="terminalBody"></div>
+    </div>
+  </section>
+
+  <section class="section carousel-section">
+    <div class="section-header">
+      <span class="section-tag">// featured_projects</span>
+      <h2 class="section-title">Selected <span class="accent-text">Builds</span></h2>
+    </div>
+    <div class="carousel-wrapper">
+      <div class="carousel-track" id="carouselTrack"></div>
+      <button class="carousel-btn prev" onclick="moveCarousel(-1)">&#8592;</button>
+      <button class="carousel-btn next" onclick="moveCarousel(1)">&#8594;</button>
+      <div class="carousel-dots" id="carouselDots"></div>
+    </div>
+  </section>
+
+  <section class="section stats-section">
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-bar"></div><span class="stat-num" data-target="40">0</span><span class="stat-suf">+</span><p>Projects Shipped</p></div>
+      <div class="stat-item"><div class="stat-bar"></div><span class="stat-num" data-target="98">0</span><span class="stat-suf">%</span><p>Client Satisfaction</p></div>
+      <div class="stat-item"><div class="stat-bar"></div><span class="stat-num" data-target="5">0</span><span class="stat-suf">yrs</span><p>In The Game</p></div>
+      <div class="stat-item"><div class="stat-bar"></div><span class="stat-num" data-target="12">0</span><span class="stat-suf">k+</span><p>Lines Committed</p></div>
+    </div>
+  </section>
+
+  <section class="section reviews-preview">
+    <div class="section-header">
+      <span class="section-tag">// client_logs</span>
+      <h2 class="section-title">What they <span class="accent-text">say</span></h2>
+    </div>
+    <div class="reviews-marquee-outer">
+      <div class="reviews-marquee" id="reviewsMarquee"></div>
+    </div>
+    <div class="reviews-cta">
+      <button onclick="navigate('reviews')" class="btn-ghost">view all reviews →</button>
+    </div>
+  </section>
+
+  <section class="cta-banner">
+    <div class="cta-glitch" data-text="LET'S BUILD SOMETHING.">LET'S BUILD SOMETHING.</div>
+    <p>Got an idea? Let's ship it.</p>
+    <button onclick="navigate('reviews')" class="btn-primary"><span class="btn-icon">▶</span> Start a Project</button>
+  </section>
+</div>
+
+<!-- ===== ABOUT ===== -->
+<div id="page-about" class="page">
+  <section class="page-hero">
+    <div class="ph-grid"></div>
+    <div class="page-hero-inner">
+      <span class="section-tag">// whoami</span>
+      <h1 class="page-hero-title">The dev <span class="accent-text">behind</span><br>the keyboard.</h1>
+    </div>
+  </section>
+  <section class="section about-content">
+    <div class="about-grid">
+      <div class="about-image-wrap">
+        <div class="about-img-frame">
+          <div class="about-img-placeholder" id="aboutImgDisplay"><span class="img-placeholder-text">// photo.jpg</span></div>
+          <div class="img-corner tl"></div><div class="img-corner tr"></div>
+          <div class="img-corner bl"></div><div class="img-corner br"></div>
+        </div>
+        <div class="about-badge"><span class="badge-dot"></span><span>Available for Work</span></div>
+      </div>
+      <div class="about-text">
+        <h2 id="aboutNameDisplay">Mark00s</h2>
+        <p class="about-role" id="aboutRoleDisplay">Full Stack &amp; Game Developer</p>
+        <div class="about-bio" id="aboutBioDisplay">
+          <p>I'm Mark00s — a full-stack developer and game dev who lives at the intersection of clean code and creative chaos. I build fast, scalable web apps and immersive game experiences that actually ship.</p>
+          <p>Whether it's architecting a backend system, crafting a pixel-perfect frontend, or building a game from scratch — I bring the same obsessive attention to detail to every project.</p>
+        </div>
+        <div class="about-skills">
+          <span class="section-tag" style="display:block;margin-bottom:.75rem">// skills.json</span>
+          <div class="skills-list" id="skillsDisplay">
+            <span class="skill-tag">React</span><span class="skill-tag">Node.js</span>
+            <span class="skill-tag">Unity</span><span class="skill-tag">PostgreSQL</span>
+            <span class="skill-tag">Python</span><span class="skill-tag">C#</span>
+            <span class="skill-tag">Docker</span><span class="skill-tag">Game Design</span>
+          </div>
+        </div>
+        <div class="about-social" id="socialLinksDisplay">
+          <a href="#" class="social-link">GitHub</a>
+          <a href="#" class="social-link">LinkedIn</a>
+          <a href="#" class="social-link">itch.io</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== WORKS ===== -->
+<div id="page-works" class="page">
+  <section class="page-hero">
+    <div class="ph-grid"></div>
+    <div class="page-hero-inner">
+      <span class="section-tag">// ls ./projects</span>
+      <h1 class="page-hero-title">Code that<br><span class="accent-text">ships.</span></h1>
+    </div>
+  </section>
+  <section class="section works-section">
+    <div class="works-filter" id="worksFilter">
+      <button class="filter-btn active" data-filter="all" onclick="filterWorks('all',this)">all</button>
+    </div>
+    <div class="works-grid" id="worksGrid"></div>
+  </section>
+</div>
+
+<!-- ===== REVIEWS ===== -->
+<div id="page-reviews" class="page">
+  <section class="page-hero">
+    <div class="ph-grid"></div>
+    <div class="page-hero-inner">
+      <span class="section-tag">// client_feedback.log</span>
+      <h1 class="page-hero-title">Reviews &amp;<br><span class="accent-text">Ratings.</span></h1>
+    </div>
+  </section>
+  <section class="section">
+    <div class="rating-overview">
+      <div class="rating-terminal">
+        <span class="rt-label">avg_rating:</span>
+        <span class="rating-big" id="avgRatingDisplay">5.0</span>
+        <span class="rt-max">/5.0</span>
+      </div>
+      <div class="stars-big" id="avgStarsDisplay">★★★★★</div>
+      <p id="totalReviewsDisplay" class="total-reviews">0 reviews</p>
+    </div>
+    <div class="reviews-full-grid" id="reviewsFullGrid"></div>
+    <div class="review-form-wrap">
+      <div class="terminal-bar" style="border-radius:var(--radius) var(--radius) 0 0">
+        <span class="t-dot tdred"></span><span class="t-dot tdyellow"></span><span class="t-dot tdgreen"></span>
+        <span class="t-title">submit_review.sh</span>
+      </div>
+      <div class="review-form">
+        <input type="text" id="reviewName" placeholder="your_name" />
+        <input type="text" id="reviewRole" placeholder="role / company" />
+        <div class="star-picker" id="starPicker">
+          <span data-val="1">★</span><span data-val="2">★</span>
+          <span data-val="3">★</span><span data-val="4">★</span><span data-val="5">★</span>
+        </div>
+        <textarea id="reviewText" placeholder="// write your experience here..." rows="4"></textarea>
+        <button onclick="submitReview()" class="btn-primary"><span class="btn-icon">▶</span> Submit Review</button>
+        <div id="reviewMsg" class="form-msg"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== ADMIN LOGIN ===== -->
+<div id="page-admin-login" class="page">
+  <div class="admin-login-wrap">
+    <div class="admin-login-box">
+      <div class="terminal-bar" style="margin-bottom:1.5rem;border-radius:var(--radius) var(--radius) 0 0">
+        <span class="t-dot tdred"></span><span class="t-dot tdyellow"></span><span class="t-dot tdgreen"></span>
+        <span class="t-title">admin_access.sh</span>
+      </div>
+      <div class="login-prompt">root@mark00s:~$ authenticate</div>
+      <input type="text" id="adminUser" placeholder="username" />
+      <input type="password" id="adminPass" placeholder="password" />
+      <button onclick="adminLogin()" class="btn-primary" style="width:100%;margin-top:.5rem">
+        <span class="btn-icon">▶</span> Access Panel
+      </button>
+      <div id="loginErr" class="form-msg error"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN PANEL ===== -->
+<div id="page-admin" class="page">
+  <div class="admin-wrap">
+    <aside class="admin-sidebar">
+      <div class="admin-brand"><span class="bracket">[</span>Admin<span class="bracket">]</span></div>
+      <nav class="admin-nav">
+        <a onclick="showAdminTab('dash')" class="admin-link active" data-tab="dash"><span class="al-idx">00</span> Dashboard</a>
+        <a onclick="showAdminTab('about')" class="admin-link" data-tab="about"><span class="al-idx">01</span> About Me</a>
+        <a onclick="showAdminTab('works')" class="admin-link" data-tab="works"><span class="al-idx">02</span> Works</a>
+        <a onclick="showAdminTab('reviews-admin')" class="admin-link" data-tab="reviews-admin"><span class="al-idx">03</span> Reviews</a>
+      </nav>
+      <button onclick="adminLogout()" class="btn-ghost" style="margin-top:auto;width:100%">exit →</button>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-tab active" id="admin-tab-dash">
+        <h2>// dashboard</h2>
+        <div class="dash-cards">
+          <div class="dash-card"><span id="dc-works">0</span><p>Works</p></div>
+          <div class="dash-card"><span id="dc-reviews">0</span><p>Reviews</p></div>
+          <div class="dash-card"><span id="dc-rating">5.0</span><p>Avg Rating</p></div>
+        </div>
+        <div class="dash-log">
+          <div class="log-line"><span class="log-ok">[OK]</span> Database connected</div>
+          <div class="log-line"><span class="log-ok">[OK]</span> Portfolio loaded</div>
+          <div class="log-line"><span class="log-info">[INFO]</span> Welcome back, Mark00s</div>
+        </div>
+      </div>
+
+      <div class="admin-tab" id="admin-tab-about">
+        <h2>// edit_about.sh</h2>
+        <div class="admin-form">
+          <label>display_name</label><input type="text" id="aName" placeholder="Mark00s" />
+          <label>role_title</label><input type="text" id="aRole" placeholder="Full Stack & Game Developer" />
+          <label>bio_text</label><textarea id="aBio" rows="6" placeholder="Your story..."></textarea>
+          <label>skills[] (comma-separated)</label><input type="text" id="aSkills" placeholder="React, Node.js, Unity..." />
+          <label>photo_url</label><input type="text" id="aPhoto" placeholder="https://..." />
+          <label>social_links (Label|URL per line)</label><textarea id="aSocial" rows="3" placeholder="GitHub|https://github.com/&#10;itch.io|https://itch.io/"></textarea>
+          <label>hero_stack (comma-separated)</label><input type="text" id="aStack" placeholder="React, Node.js, Unity..." />
+          <button onclick="saveAbout()" class="btn-primary"><span class="btn-icon">▶</span> Save Changes</button>
+          <div id="aboutMsg" class="form-msg"></div>
+        </div>
+      </div>
+
+      <div class="admin-tab" id="admin-tab-works">
+        <h2>// add_project.sh</h2>
+        <div class="admin-form">
+          <label>project_title</label><input type="text" id="wTitle" placeholder="My Awesome App" />
+          <label>category</label><input type="text" id="wCat" placeholder="Web App / Game / API" />
+          <label>description</label><textarea id="wDesc" rows="3" placeholder="What does it do?"></textarea>
+          <label>image_url</label><input type="text" id="wImg" placeholder="https://..." />
+          <label>tech_tags (comma-separated)</label><input type="text" id="wTags" placeholder="React, Node.js..." />
+          <label>featured (carousel)</label>
+          <select id="wFeatured"><option value="true">Yes</option><option value="false">No</option></select>
+          <button onclick="addWork()" class="btn-primary"><span class="btn-icon">▶</span> Add Project</button>
+          <div id="workMsg" class="form-msg"></div>
+        </div>
+        <h3 style="margin-top:2rem;color:var(--green);font-family:var(--font-mono);font-size:.85rem">// current_projects</h3>
+        <div id="adminWorksList" class="admin-items-list"></div>
+      </div>
+
+      <div class="admin-tab" id="admin-tab-reviews-admin">
+        <h2>// review_queue.log</h2>
+        <div id="adminReviewsList" class="admin-items-list"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer id="siteFooter">
+  <div class="footer-inner">
+    <div class="footer-logo"><span class="bracket">[</span>Mark00s<span class="bracket">]</span></div>
+    <p class="footer-copy">// © <span id="yr"></span> Mark00s. All rights reserved.</p>
+    <a class="admin-access-link" onclick="navigate('admin-login')">root@admin</a>
+  </div>
+</footer>
+
+<!-- MODAL -->
+<div id="workModal" class="modal-overlay" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <img id="modalImg" src="" alt="" />
+    <div class="modal-body">
+      <div class="modal-top">
+        <span class="modal-cat" id="modalCat"></span>
+        <div class="modal-tags" id="modalTags"></div>
+      </div>
+      <h2 id="modalTitle"></h2>
+      <p id="modalDesc"></p>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
+
+<!-- ===================== AI CHATBOT ===================== -->
+<div class="chat-fab" id="chatFab" onclick="toggleChat()" title="Chat with AI">
+  <span class="chat-fab-icon" id="chatFabIcon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+  </span>
+  <span class="chat-fab-close" id="chatFabClose" style="display:none">✕</span>
+  <span class="chat-notif" id="chatNotif"></span>
+</div>
+
+<div class="chat-window" id="chatWindow">
+  <div class="chat-header">
+    <div class="chat-header-info">
+      <div class="chat-avatar">M</div>
+      <div>
+        <div class="chat-title">Mark00s AI</div>
+        <div class="chat-status"><span class="chat-online-dot"></span> Online</div>
+      </div>
+    </div>
+    <button class="chat-clear" onclick="clearChat()" title="Clear chat">↺</button>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg bot">
+      <div class="chat-bubble">
+        Hey! I'm Marc's AI assistant. Ask me anything about his projects, skills, or availability — or just chat! 👾
+      </div>
+    </div>
+  </div>
+  <div class="chat-suggestions" id="chatSuggestions">
+    <button onclick="sendSuggestion('What projects has Marc built?')">Projects?</button>
+    <button onclick="sendSuggestion('What are his skills?')">Skills?</button>
+    <button onclick="sendSuggestion('Is Marc available for hire?')">Available?</button>
+  </div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')sendChat()" maxlength="300" />
+    <button class="chat-send" onclick="sendChat()" id="chatSendBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script src="chat.js"></script>
