@@ -531,6 +531,8 @@ select { appearance: none; }
 .modal-tags span { font-family: var(--font-mono); font-size: .63rem; padding: .15rem .5rem; background: var(--blue-dim); border: 1px solid var(--border2); color: var(--blue); border-radius: 2px; }
 .modal-body h2 { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; margin-bottom: .75rem; }
 .modal-body p { color: var(--muted); line-height: 1.8; }
+.contact-modal-box { max-width: 560px; }
+.contact-modal-box .modal-body { padding: 2rem; }
 
 /* ---- REVIEWS ---- */
 .rating-overview {

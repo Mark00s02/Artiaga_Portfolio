@@ -25,7 +25,7 @@
     <li><a onclick="navigate('works')" class="nav-link" data-index="02">Works</a></li>
     <li><a onclick="navigate('reviews')" class="nav-link" data-index="03">Reviews</a></li>
   </ul>
-  <a onclick="navigate('reviews')" class="nav-cta">// HIRE_ME</a>
+  <a onclick="openContact()" class="nav-cta">// HIRE_ME</a>
   <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
 </nav>
 
@@ -88,12 +88,7 @@
   </section>
 
   <section class="section stats-section">
-    <div class="stats-grid">
-      <div class="stat-item"><div class="stat-bar"></div><span class="stat-num" data-target="40">0</span><span class="stat-suf">+</span><p>Projects Shipped</p></div>
-      <div class="stat-item"><div class="stat-bar"></div><span class="stat-num" data-target="98">0</span><span class="stat-suf">%</span><p>Client Satisfaction</p></div>
-      <div class="stat-item"><div class="stat-bar"></div><span class="stat-num" data-target="5">0</span><span class="stat-suf">yrs</span><p>In The Game</p></div>
-      <div class="stat-item"><div class="stat-bar"></div><span class="stat-num" data-target="12">0</span><span class="stat-suf">k+</span><p>Lines Committed</p></div>
-    </div>
+    <div class="stats-grid" id="statsGrid"></div>
   </section>
 
   <section class="section reviews-preview">
@@ -112,7 +107,7 @@
   <section class="cta-banner">
     <div class="cta-glitch" data-text="LET'S BUILD SOMETHING.">LET'S BUILD SOMETHING.</div>
     <p>Got an idea? Let's ship it.</p>
-    <button onclick="navigate('reviews')" class="btn-primary"><span class="btn-icon">▶</span> Start a Project</button>
+    <button onclick="openContact()" class="btn-primary"><span class="btn-icon">▶</span> Start a Project</button>
   </section>
 </div>
 
@@ -254,6 +249,7 @@
         <a onclick="showAdminTab('about')" class="admin-link" data-tab="about"><span class="al-idx">01</span> About Me</a>
         <a onclick="showAdminTab('works')" class="admin-link" data-tab="works"><span class="al-idx">02</span> Works</a>
         <a onclick="showAdminTab('reviews-admin')" class="admin-link" data-tab="reviews-admin"><span class="al-idx">03</span> Reviews</a>
+        <a onclick="showAdminTab('contact')" class="admin-link" data-tab="contact"><span class="al-idx">04</span> Contact</a>
       </nav>
       <button onclick="adminLogout()" class="btn-ghost" style="margin-top:auto;width:100%">exit →</button>
     </aside>
@@ -289,7 +285,11 @@
           <div id="aPhotoPreview" style="display:none;margin-top:.6rem;width:100px;height:100px;border-radius:4px;background-size:cover;background-position:center;border:1px solid var(--border)"></div>
           <label>social_links (Label|URL per line)</label><textarea id="aSocial" rows="3" placeholder="GitHub|https://github.com/&#10;itch.io|https://itch.io/"></textarea>
           <label>hero_stack (comma-separated)</label><input type="text" id="aStack" placeholder="React, Node.js, Unity..." />
-          <button onclick="saveAbout()" class="btn-primary"><span class="btn-icon">▶</span> Save Changes</button>
+          <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+            <label style="color:var(--green);margin-bottom:.75rem;display:block">stats[] — number · suffix · label</label>
+            <div id="statsAdminList"></div>
+          </div>
+          <button onclick="saveAbout()" class="btn-primary" style="margin-top:1rem"><span class="btn-icon">▶</span> Save Changes</button>
           <div id="aboutMsg" class="form-msg"></div>
         </div>
       </div>
@@ -315,6 +315,29 @@
         <h2>// review_queue.log</h2>
         <div id="adminReviewsList" class="admin-items-list"></div>
       </div>
+
+      <div class="admin-tab" id="admin-tab-contact">
+        <h2>// contact_settings.sh</h2>
+        <div class="admin-form">
+          <label>receiving_email — your work email where inquiries land</label>
+          <input type="email" id="cToEmail" placeholder="you@yourwork.com" />
+          <label>sending_email — must be verified in Resend dashboard</label>
+          <input type="email" id="cFromEmail" placeholder="contact@yourdomain.com" />
+          <label>sender_display_name</label>
+          <input type="text" id="cFromName" placeholder="Marc Portfolio" />
+          <label>resend_api_key — get one free at resend.com</label>
+          <input type="password" id="cResendKey" placeholder="re_xxxxxxxxxx" />
+          <button onclick="saveContactSettings()" class="btn-primary"><span class="btn-icon">▶</span> Save Settings</button>
+          <div id="contactSettingsMsg" class="form-msg"></div>
+          <div style="margin-top:1.5rem;padding:1rem;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-mono);font-size:.75rem;color:var(--muted);line-height:1.8">
+            <span style="color:var(--green)">//</span> Setup guide:<br>
+            1. Sign up free at <span style="color:var(--blue)">resend.com</span><br>
+            2. Add &amp; verify your domain (or use onboarding@resend.dev for testing)<br>
+            3. Create an API key and paste it above<br>
+            4. Set your from email to a verified domain address
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 </div>
@@ -327,6 +350,28 @@
     <a class="admin-access-link" onclick="navigate('admin-login')">root@admin</a>
   </div>
 </footer>
+
+<!-- CONTACT MODAL -->
+<div id="contactModal" class="modal-overlay" onclick="closeContact()">
+  <div class="modal-box contact-modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeContact()">×</button>
+    <div class="modal-body">
+      <div style="margin-bottom:1.25rem">
+        <span style="font-family:var(--font-mono);font-size:.75rem;color:var(--green);letter-spacing:.1em">// new_project.sh</span>
+        <h2 style="margin-top:.35rem;font-family:var(--font-display);font-size:1.6rem">Let's Build Something.</h2>
+        <p style="color:var(--muted);margin-top:.4rem;font-size:.9rem">Drop your details and I'll get back to you within 24 hours.</p>
+      </div>
+      <div class="admin-form" style="gap:.75rem">
+        <label>your_name</label><input type="text" id="cName" placeholder="Jane Smith" />
+        <label>your_email</label><input type="email" id="cEmail" placeholder="jane@company.com" />
+        <label>subject</label><input type="text" id="cSubject" placeholder="Project Inquiry / Collaboration / ..." />
+        <label>message</label><textarea id="cMessage" rows="5" placeholder="Tell me about the project..."></textarea>
+        <button onclick="submitContact()" class="btn-primary" id="cSubmitBtn"><span class="btn-icon">▶</span> Send Message</button>
+        <div id="contactFormMsg" class="form-msg"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL -->
 <div id="workModal" class="modal-overlay" onclick="closeModal()">

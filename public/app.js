@@ -75,7 +75,32 @@ async function renderHome() {
   await renderCarousel();
   await renderReviewsMarquee();
   await renderHeroStack();
+  await renderStats();
   setTimeout(animateStats, 600);
+}
+
+async function renderStats() {
+  const grid = document.getElementById('statsGrid');
+  if (!grid) return;
+  try {
+    const about = await DB.getAbout();
+    const stats = about.stats || [
+      { num: 40, suffix: '+',   label: 'Projects Shipped' },
+      { num: 98, suffix: '%',   label: 'Client Satisfaction' },
+      { num: 5,  suffix: 'yrs', label: 'In The Game' },
+      { num: 12, suffix: 'k+',  label: 'Lines Committed' },
+    ];
+    grid.innerHTML = stats.map(s => `
+      <div class="stat-item">
+        <div class="stat-bar"></div>
+        <span class="stat-num" data-target="${s.num}">0</span>
+        <span class="stat-suf">${s.suffix}</span>
+        <p>${s.label}</p>
+      </div>
+    `).join('');
+  } catch {
+    grid.innerHTML = '';
+  }
 }
 
 // ---- MATRIX RAIN ----
@@ -332,7 +357,50 @@ function closeModal() {
   document.getElementById('workModal').classList.remove('active');
   document.body.style.overflow = '';
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ---- CONTACT MODAL ----
+function openContact() {
+  document.getElementById('contactModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('contactFormMsg').textContent = '';
+  document.getElementById('cSubmitBtn').disabled = false;
+  document.getElementById('cSubmitBtn').innerHTML = '<span class="btn-icon">▶</span> Send Message';
+}
+
+function closeContact() {
+  document.getElementById('contactModal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+async function submitContact() {
+  const name    = document.getElementById('cName').value.trim();
+  const email   = document.getElementById('cEmail').value.trim();
+  const subject = document.getElementById('cSubject').value.trim();
+  const message = document.getElementById('cMessage').value.trim();
+  if (!name || !email || !message) {
+    flash('contactFormMsg', '// error: name, email, and message are required', 'error');
+    return;
+  }
+  const btn = document.getElementById('cSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-icon">▶</span> Sending...';
+  try {
+    await DB.sendContact({ name, email, subject, message });
+    flash('contactFormMsg', '// message sent — I\'ll be in touch soon!', 'success');
+    document.getElementById('cName').value    = '';
+    document.getElementById('cEmail').value   = '';
+    document.getElementById('cSubject').value = '';
+    document.getElementById('cMessage').value = '';
+    btn.innerHTML = '<span class="btn-icon">▶</span> Send Message';
+    setTimeout(closeContact, 2500);
+  } catch (e) {
+    flash('contactFormMsg', '// ' + (e.message || 'send failed — try again'), 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<span class="btn-icon">▶</span> Send Message';
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeContact(); } });
 
 // ---- REVIEWS ----
 async function renderReviews() {
@@ -437,6 +505,27 @@ async function renderAdmin() {
     setVal('aSocial', a.social);
     setVal('aStack',  a.stack);
 
+    const defaultStats = [
+      { num: 40, suffix: '+',   label: 'Projects Shipped' },
+      { num: 98, suffix: '%',   label: 'Client Satisfaction' },
+      { num: 5,  suffix: 'yrs', label: 'In The Game' },
+      { num: 12, suffix: 'k+',  label: 'Lines Committed' },
+    ];
+    const stats = a.stats || defaultStats;
+    document.getElementById('statsAdminList').innerHTML = stats.map((s, i) => `
+      <div style="display:grid;grid-template-columns:70px 80px 1fr;gap:.5rem;margin-bottom:.5rem;align-items:center">
+        <input type="number" id="sNum${i}" value="${s.num}" placeholder="40" style="text-align:center" />
+        <input type="text"   id="sSuf${i}" value="${s.suffix}" placeholder="+" style="text-align:center" />
+        <input type="text"   id="sLab${i}" value="${s.label}" placeholder="Projects Shipped" />
+      </div>
+    `).join('');
+
+    const cs = await DB.getSettings();
+    setVal('cToEmail',   cs.to_email   || '');
+    setVal('cFromEmail', cs.from_email || '');
+    setVal('cFromName',  cs.from_name  || '');
+    setVal('cResendKey', cs.resend_api_key || '');
+
     await renderAdminWorks();
     await renderAdminReviews();
   } catch (e) { console.error('renderAdmin:', e); }
@@ -482,6 +571,12 @@ async function saveAbout() {
       document.getElementById('aPhotoFilename').textContent = '';
     }
 
+    const stats = [0, 1, 2, 3].map(i => ({
+      num:    parseInt(document.getElementById('sNum' + i)?.value) || 0,
+      suffix: document.getElementById('sSuf' + i)?.value.trim() || '',
+      label:  document.getElementById('sLab' + i)?.value.trim() || '',
+    }));
+
     await DB.saveAbout({
       name:   document.getElementById('aName').value.trim(),
       role:   document.getElementById('aRole').value.trim(),
@@ -490,9 +585,22 @@ async function saveAbout() {
       photo,
       social: document.getElementById('aSocial').value.trim(),
       stack:  document.getElementById('aStack').value.trim(),
+      stats,
     });
     flash('aboutMsg', '// saved successfully', 'success');
   } catch { flash('aboutMsg', '// error saving', 'error'); }
+}
+
+async function saveContactSettings() {
+  try {
+    await DB.saveSettings({
+      to_email:       document.getElementById('cToEmail').value.trim(),
+      from_email:     document.getElementById('cFromEmail').value.trim(),
+      from_name:      document.getElementById('cFromName').value.trim(),
+      resend_api_key: document.getElementById('cResendKey').value.trim(),
+    });
+    flash('contactSettingsMsg', '// settings saved', 'success');
+  } catch { flash('contactSettingsMsg', '// error saving', 'error'); }
 }
 
 async function addWork() {

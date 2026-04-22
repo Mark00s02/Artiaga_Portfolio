@@ -50,6 +50,11 @@ const DB = {
     return [...new Set(works.map(w => w.cat))];
   },
 
+  // ---- CONTACT SETTINGS ----
+  async getSettings()         { return API.get('/api/settings'); },
+  async saveSettings(data)    { return API.post('/api/settings', data); },
+  async sendContact(data)     { return API.post('/api/contact', data); },
+
   // ---- REVIEWS ----
   async getReviews()       { return API.get('/api/reviews'); },       // approved only
   async getAllReviews()     { return API.get('/api/reviews/all'); },   // admin: all

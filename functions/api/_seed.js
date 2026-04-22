@@ -7,6 +7,12 @@ export const DEFAULT_ABOUT = {
   photo: "",
   social: "GitHub|https://github.com\nLinkedIn|https://linkedin.com\nitch.io|https://itch.io",
   stack: "React,Node.js,Unity,C#,PostgreSQL,Python,Docker",
+  stats: [
+    { num: 40, suffix: "+",   label: "Projects Shipped" },
+    { num: 98, suffix: "%",   label: "Client Satisfaction" },
+    { num: 5,  suffix: "yrs", label: "In The Game" },
+    { num: 12, suffix: "k+",  label: "Lines Committed" },
+  ],
 };
 
 export const DEFAULT_WORKS = [
