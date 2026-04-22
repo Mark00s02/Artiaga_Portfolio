@@ -279,7 +279,14 @@
           <label>role_title</label><input type="text" id="aRole" placeholder="Full Stack & Game Developer" />
           <label>bio_text</label><textarea id="aBio" rows="6" placeholder="Your story..."></textarea>
           <label>skills[] (comma-separated)</label><input type="text" id="aSkills" placeholder="React, Node.js, Unity..." />
-          <label>photo_url</label><input type="text" id="aPhoto" placeholder="https://..." />
+          <label>photo_url — paste a URL or upload below</label>
+          <input type="text" id="aPhoto" placeholder="https://..." />
+          <div style="display:flex;align-items:center;gap:.75rem;margin-top:.4rem">
+            <label for="aPhotoFile" class="btn-ghost" style="cursor:pointer;padding:.35rem .8rem;font-size:.8em"><span class="btn-icon">↑</span> Upload Image</label>
+            <input type="file" id="aPhotoFile" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="previewPhoto(this)" />
+            <span id="aPhotoFilename" style="opacity:.5;font-size:.8em;font-family:var(--font-mono)"></span>
+          </div>
+          <div id="aPhotoPreview" style="display:none;margin-top:.6rem;width:100px;height:100px;border-radius:4px;background-size:cover;background-position:center;border:1px solid var(--border)"></div>
           <label>social_links (Label|URL per line)</label><textarea id="aSocial" rows="3" placeholder="GitHub|https://github.com/&#10;itch.io|https://itch.io/"></textarea>
           <label>hero_stack (comma-separated)</label><input type="text" id="aStack" placeholder="React, Node.js, Unity..." />
           <button onclick="saveAbout()" class="btn-primary"><span class="btn-icon">▶</span> Save Changes</button>

@@ -1,0 +1,26 @@
+name = "artiaga-portfolio"
+compatibility_date = "2024-04-01"
+pages_build_output_dir = "public"
+
+# ──────────────────────────────────────────────────
+# KV Namespace — stores about, works, reviews data
+# 1. Run: wrangler kv:namespace create PORTFOLIO_KV
+# 2. Paste the printed id below
+# ──────────────────────────────────────────────────
+[[kv_namespaces]]
+binding = "PORTFOLIO_KV"
+id = "YOUR_KV_NAMESPACE_ID_HERE"
+
+# ──────────────────────────────────────────────────
+# R2 Bucket — stores uploaded images
+# 1. Run: wrangler r2 bucket create artiaga-portfolio-images
+# 2. In Cloudflare dashboard: Settings → R2 → enable public access (or custom domain)
+# ──────────────────────────────────────────────────
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "artiaga-portfolio-images"
+
+# ──────────────────────────────────────────────────
+# Secrets — set via dashboard or CLI, never in this file
+# Run: wrangler pages secret put GROQ_API_KEY
+# ──────────────────────────────────────────────────

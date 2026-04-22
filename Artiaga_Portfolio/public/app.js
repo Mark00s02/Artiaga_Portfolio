@@ -449,16 +449,45 @@ function showAdminTab(tab) {
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
 }
 
+function previewPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('aPhotoFilename').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('aPhotoPreview');
+    preview.style.backgroundImage = `url('${e.target.result}')`;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
 async function saveAbout() {
   const rawBio = document.getElementById('aBio').value.trim();
   const bio = rawBio.split('\n\n').map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
   try {
+    let photo = document.getElementById('aPhoto').value.trim();
+
+    const fileInput = document.getElementById('aPhotoFile');
+    if (fileInput.files[0]) {
+      flash('aboutMsg', '// uploading image...', 'success');
+      const fd = new FormData();
+      fd.append('file', fileInput.files[0]);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      if (!res.ok) { flash('aboutMsg', '// upload failed', 'error'); return; }
+      const { url } = await res.json();
+      photo = url;
+      document.getElementById('aPhoto').value = url;
+      fileInput.value = '';
+      document.getElementById('aPhotoFilename').textContent = '';
+    }
+
     await DB.saveAbout({
       name:   document.getElementById('aName').value.trim(),
       role:   document.getElementById('aRole').value.trim(),
       bio,
       skills: document.getElementById('aSkills').value.trim(),
-      photo:  document.getElementById('aPhoto').value.trim(),
+      photo,
       social: document.getElementById('aSocial').value.trim(),
       stack:  document.getElementById('aStack').value.trim(),
     });
