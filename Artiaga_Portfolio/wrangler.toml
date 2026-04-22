@@ -9,7 +9,7 @@ pages_build_output_dir = "public"
 # ──────────────────────────────────────────────────
 [[kv_namespaces]]
 binding = "PORTFOLIO_KV"
-id = "YOUR_KV_NAMESPACE_ID_HERE"
+id = "fcaf0bfb2e5949fd867a29ced2c2c3b8"
 
 # ──────────────────────────────────────────────────
 # R2 Bucket — stores uploaded images
