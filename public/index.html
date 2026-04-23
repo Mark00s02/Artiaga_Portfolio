@@ -319,12 +319,8 @@
       <div class="admin-tab" id="admin-tab-contact">
         <h2>// contact_settings.sh</h2>
         <div class="admin-form">
-          <label>receiving_email — your work email where inquiries land</label>
-          <input type="email" id="cToEmail" placeholder="you@yourwork.com" />
-          <label>sending_email — must be verified in Resend dashboard</label>
-          <input type="email" id="cFromEmail" placeholder="contact@yourdomain.com" />
-          <label>sender_display_name</label>
-          <input type="text" id="cFromName" placeholder="Marc Portfolio" />
+          <label>receiving_email — your email where inquiries will be sent</label>
+          <input type="email" id="cToEmail" placeholder="you@gmail.com" />
           <label>resend_api_key — get one free at resend.com</label>
           <input type="password" id="cResendKey" placeholder="re_xxxxxxxxxx" />
           <button onclick="saveContactSettings()" class="btn-primary"><span class="btn-icon">▶</span> Save Settings</button>
@@ -332,9 +328,9 @@
           <div style="margin-top:1.5rem;padding:1rem;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-mono);font-size:.75rem;color:var(--muted);line-height:1.8">
             <span style="color:var(--green)">//</span> Setup guide:<br>
             1. Sign up free at <span style="color:var(--blue)">resend.com</span><br>
-            2. Add &amp; verify your domain (or use onboarding@resend.dev for testing)<br>
-            3. Create an API key and paste it above<br>
-            4. Set your from email to a verified domain address
+            2. Create an API key and paste it above<br>
+            3. Set your receiving email above — this is where contact form messages will be delivered<br>
+            <span style="color:#fb923c">note:</span> emails will arrive from onboarding@resend.dev
           </div>
         </div>
       </div>

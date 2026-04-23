@@ -521,9 +521,7 @@ async function renderAdmin() {
     `).join('');
 
     const cs = await DB.getSettings();
-    setVal('cToEmail',   cs.to_email   || '');
-    setVal('cFromEmail', cs.from_email || '');
-    setVal('cFromName',  cs.from_name  || '');
+    setVal('cToEmail',   cs.to_email      || '');
     setVal('cResendKey', cs.resend_api_key || '');
 
     await renderAdminWorks();
@@ -595,8 +593,6 @@ async function saveContactSettings() {
   try {
     await DB.saveSettings({
       to_email:       document.getElementById('cToEmail').value.trim(),
-      from_email:     document.getElementById('cFromEmail').value.trim(),
-      from_name:      document.getElementById('cFromName').value.trim(),
       resend_api_key: document.getElementById('cResendKey').value.trim(),
     });
     flash('contactSettingsMsg', '// settings saved', 'success');

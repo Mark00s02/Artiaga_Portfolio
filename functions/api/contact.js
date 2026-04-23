@@ -13,8 +13,8 @@ export async function onRequestPost({ request, env }) {
       return Response.json({ error: 'Receiving email not configured in admin panel.' }, { status: 500 });
     }
 
-    const fromEmail = settings.from_email || 'onboarding@resend.dev';
-    const fromName  = settings.from_name  || 'Portfolio Contact';
+    const fromEmail = 'onboarding@resend.dev';
+    const fromName  = 'Portfolio Contact';
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
