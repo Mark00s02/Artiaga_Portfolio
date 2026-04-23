@@ -323,7 +323,7 @@ function renderWorksGrid(works) {
     const tags = (w.tags || '').split(',').map(t => `<span>${t.trim()}</span>`).join('');
     return `
       <div class="work-card" onclick="openModal('${w._id}')">
-        <div class="work-img" style="background-image:url('${w.img || fallback}')">
+        <div class="work-img${w.imgOrientation === 'portrait' ? ' portrait' : ''}" style="background-image:url('${w.img || fallback}')">
           <div class="work-overlay">
             <span class="work-cat">${w.cat}</span>
             <h3>${w.title}</h3>
@@ -343,7 +343,9 @@ async function openModal(id) {
     const work = _allWorks.find(w => w._id === id);
     if (!work) return;
     const fallback = 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800';
-    document.getElementById('modalImg').src = work.img || fallback;
+    const modalImg = document.getElementById('modalImg');
+    modalImg.src = work.img || fallback;
+    modalImg.className = work.imgOrientation === 'portrait' ? 'portrait' : '';
     document.getElementById('modalTitle').textContent = work.title;
     document.getElementById('modalCat').textContent   = work.cat;
     document.getElementById('modalDesc').textContent  = work.desc;
@@ -608,13 +610,15 @@ function _workFormValues() {
     desc:     document.getElementById('wDesc').value.trim(),
     img:      document.getElementById('wImg').value.trim(),
     tags:     document.getElementById('wTags').value.trim(),
-    featured: document.getElementById('wFeatured').value === 'true',
+    featured:        document.getElementById('wFeatured').value === 'true',
+    imgOrientation:  document.getElementById('wOrientation').value || 'landscape',
   };
 }
 
 function _resetWorkForm() {
   ['wTitle','wCat','wDesc','wImg','wTags'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  document.getElementById('wFeatured').value = 'true';
+  document.getElementById('wFeatured').value    = 'true';
+  document.getElementById('wOrientation').value = 'landscape';
   const addBtn = document.querySelector('#admin-tab-works .btn-primary');
   addBtn.innerHTML = '<span class="btn-icon">▶</span> Add Project';
   addBtn.onclick = addWork;
@@ -645,7 +649,8 @@ async function editWork(id) {
   document.getElementById('wDesc').value     = w.desc     || '';
   document.getElementById('wImg').value      = w.img      || '';
   document.getElementById('wTags').value     = w.tags     || '';
-  document.getElementById('wFeatured').value = w.featured ? 'true' : 'false';
+  document.getElementById('wFeatured').value    = w.featured ? 'true' : 'false';
+  document.getElementById('wOrientation').value = w.imgOrientation || 'landscape';
   const addBtn = document.querySelector('#admin-tab-works .btn-primary');
   addBtn.innerHTML = '<span class="btn-icon">✎</span> Save Changes';
   addBtn.onclick = saveEditWork;
