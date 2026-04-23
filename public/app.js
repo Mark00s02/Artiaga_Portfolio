@@ -603,23 +603,81 @@ async function saveContactSettings() {
   } catch { flash('contactSettingsMsg', '// error saving', 'error'); }
 }
 
+let _editingWorkId = null;
+
+function _workFormValues() {
+  return {
+    title:    document.getElementById('wTitle').value.trim(),
+    cat:      document.getElementById('wCat').value.trim(),
+    desc:     document.getElementById('wDesc').value.trim(),
+    img:      document.getElementById('wImg').value.trim(),
+    tags:     document.getElementById('wTags').value.trim(),
+    featured: document.getElementById('wFeatured').value === 'true',
+  };
+}
+
+function _resetWorkForm() {
+  ['wTitle','wCat','wDesc','wImg','wTags'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('wFeatured').value = 'true';
+  const addBtn = document.querySelector('#admin-tab-works .btn-primary');
+  addBtn.innerHTML = '<span class="btn-icon">▶</span> Add Project';
+  addBtn.onclick = addWork;
+  const cancelBtn = document.getElementById('cancelEditBtn');
+  if (cancelBtn) cancelBtn.remove();
+  _editingWorkId = null;
+}
+
 async function addWork() {
-  const title = document.getElementById('wTitle').value.trim();
-  const cat   = document.getElementById('wCat').value.trim();
+  const { title, cat } = _workFormValues();
   if (!title || !cat) { flash('workMsg','// error: title and category required','error'); return; }
   try {
-    await DB.addWork({
-      title, cat,
-      desc:     document.getElementById('wDesc').value.trim(),
-      img:      document.getElementById('wImg').value.trim(),
-      tags:     document.getElementById('wTags').value.trim(),
-      featured: document.getElementById('wFeatured').value === 'true',
-    });
+    await DB.addWork(_workFormValues());
     flash('workMsg','// project added','success');
-    ['wTitle','wCat','wDesc','wImg','wTags'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    _resetWorkForm();
     _allWorks = [];
     await renderAdminWorks();
   } catch { flash('workMsg','// error adding project','error'); }
+}
+
+async function editWork(id) {
+  const works = await DB.getWorks();
+  const w = works.find(w => w._id === id);
+  if (!w) return;
+  _editingWorkId = id;
+  document.getElementById('wTitle').value    = w.title    || '';
+  document.getElementById('wCat').value      = w.cat      || '';
+  document.getElementById('wDesc').value     = w.desc     || '';
+  document.getElementById('wImg').value      = w.img      || '';
+  document.getElementById('wTags').value     = w.tags     || '';
+  document.getElementById('wFeatured').value = w.featured ? 'true' : 'false';
+  const addBtn = document.querySelector('#admin-tab-works .btn-primary');
+  addBtn.innerHTML = '<span class="btn-icon">✎</span> Save Changes';
+  addBtn.onclick = saveEditWork;
+  if (!document.getElementById('cancelEditBtn')) {
+    const cancelBtn = document.createElement('button');
+    cancelBtn.id        = 'cancelEditBtn';
+    cancelBtn.className = 'btn-delete';
+    cancelBtn.textContent = 'cancel';
+    cancelBtn.onclick   = cancelEditWork;
+    addBtn.insertAdjacentElement('afterend', cancelBtn);
+  }
+  document.getElementById('wTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelEditWork() {
+  _resetWorkForm();
+}
+
+async function saveEditWork() {
+  const { title, cat } = _workFormValues();
+  if (!title || !cat) { flash('workMsg','// error: title and category required','error'); return; }
+  try {
+    await DB.updateWork(_editingWorkId, _workFormValues());
+    flash('workMsg','// project updated','success');
+    _resetWorkForm();
+    _allWorks = [];
+    await renderAdminWorks();
+  } catch { flash('workMsg','// error updating project','error'); }
 }
 
 async function renderAdminWorks() {
@@ -634,7 +692,10 @@ async function renderAdminWorks() {
         <span>${w.cat}${w.featured ? ' · ⭐ featured' : ''}</span>
         <p>${(w.tags||'').substring(0,60)}</p>
       </div>
-      <button onclick="deleteWork('${w._id}')" class="btn-delete">rm</button>
+      <div style="display:flex;gap:.4rem;flex-shrink:0">
+        <button onclick="editWork('${w._id}')" class="btn-edit">edit</button>
+        <button onclick="deleteWork('${w._id}')" class="btn-delete">rm</button>
+      </div>
     </div>`).join('');
 }
 

@@ -90,6 +90,14 @@ app.post('/api/works', async (req, res) => {
     res.json(await db.works.insert(work));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+app.patch('/api/works/:id', async (req, res) => {
+  try {
+    const { _id, createdAt, ...fields } = req.body;
+    const update = { ...fields, featured: fields.featured === true || fields.featured === 'true' };
+    await db.works.update({ _id: req.params.id }, { $set: update }, {});
+    res.json(await db.works.findOne({ _id: req.params.id }));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 app.delete('/api/works/:id', async (req, res) => {
   try { await db.works.remove({ _id: req.params.id }, {}); res.json({ ok: true }); }
   catch (e) { res.status(500).json({ error: e.message }); }

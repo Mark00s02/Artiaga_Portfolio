@@ -648,6 +648,13 @@ select { appearance: none; }
   transition: background var(--transition);
 }
 .btn-approve:hover { background: rgba(34,197,94,0.2); }
+.btn-edit {
+  padding: .35rem .8rem; background: rgba(96,165,250,0.1); color: #60a5fa;
+  border: 1px solid rgba(96,165,250,0.25); border-radius: var(--radius);
+  font-family: var(--font-mono); font-size: .72rem; flex-shrink: 0;
+  transition: background var(--transition);
+}
+.btn-edit:hover { background: rgba(96,165,250,0.2); }
 
 /* ---- FOOTER ---- */
 footer {
