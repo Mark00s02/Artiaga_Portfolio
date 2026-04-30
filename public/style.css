@@ -79,19 +79,8 @@ select { appearance: none; }
 }
 
 /* ---- CUSTOM CURSOR ---- */
-.cursor {
-  position: fixed; width: 10px; height: 10px; border-radius: 50%;
-  background: var(--blue); pointer-events: none; z-index: 10000;
-  transform: translate(-50%,-50%);
-  transition: transform .1s, background .2s;
-  box-shadow: 0 0 10px var(--blue-glow);
-}
-.cursor-trail {
-  position: fixed; width: 28px; height: 28px; border-radius: 50%;
-  border: 1px solid var(--blue); pointer-events: none; z-index: 9999;
-  transform: translate(-50%,-50%);
-  transition: left .15s ease, top .15s ease, opacity .3s;
-  opacity: .5;
+#cursorCanvas {
+  position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10000;
 }
 
 /* ---- PAGE SYSTEM ---- */
