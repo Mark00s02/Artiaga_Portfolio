@@ -32,18 +32,19 @@ function initCursor() {
   const PX = 3; // size of one "pixel" cell in screen px
   const TRAIL_COLORS = ['#ef4444', '#22c55e', '#3b82f6']; // red, green, blue
 
-  // Classic pixel-art arrow cursor bitmap (1 = filled, 0 = empty)
+  // Pixel-art arrow cursor: 0=empty, 1=red, 2=green, 3=blue
   const SHAPE = [
-    [1,0,0,0,0,0],
-    [1,1,0,0,0,0],
-    [1,1,1,0,0,0],
-    [1,1,1,1,0,0],
-    [1,1,1,1,1,0],
-    [1,1,1,0,0,0],
-    [1,0,1,1,0,0],
-    [0,0,0,1,1,0],
-    [0,0,0,0,1,0],
+    [3,0,0,0,0,0],
+    [1,2,0,0,0,0],
+    [2,3,1,0,0,0],
+    [1,2,3,2,0,0],
+    [3,1,2,1,3,0],
+    [2,3,1,0,0,0],
+    [1,0,3,2,0,0],
+    [0,0,0,1,3,0],
+    [0,0,0,0,2,0],
   ];
+  const PIXEL_COLORS = { 1: '#ef4444', 2: '#22c55e', 3: '#3b82f6' };
 
   let mx = -200, my = -200, isDown = false;
   let lastTrailX = -999, lastTrailY = -999;
@@ -97,16 +98,18 @@ function initCursor() {
   });
 
   function drawCursor(x, y) {
-    const fill = isDown ? '#22c55e' : '#3b82f6';
-    // 1-pixel shadow for readability against light backgrounds
+    // Shadow pass
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
     for (let r = 0; r < SHAPE.length; r++)
       for (let c = 0; c < SHAPE[r].length; c++)
         if (SHAPE[r][c]) ctx.fillRect(x + c*PX + 1, y + r*PX + 1, PX, PX);
-    ctx.fillStyle = fill;
+    // Color pass — each cell uses its assigned color
     for (let r = 0; r < SHAPE.length; r++)
       for (let c = 0; c < SHAPE[r].length; c++)
-        if (SHAPE[r][c]) ctx.fillRect(x + c*PX, y + r*PX, PX, PX);
+        if (SHAPE[r][c]) {
+          ctx.fillStyle = PIXEL_COLORS[SHAPE[r][c]];
+          ctx.fillRect(x + c*PX, y + r*PX, PX, PX);
+        }
   }
 
   function animate() {
