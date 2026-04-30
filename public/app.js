@@ -29,7 +29,8 @@ function initCursor() {
   resize();
   window.addEventListener('resize', resize);
 
-  const PX = 4; // size of one "pixel" cell in screen px
+  const PX = 3; // size of one "pixel" cell in screen px
+  const TRAIL_COLORS = ['#ef4444', '#22c55e', '#3b82f6']; // red, green, blue
 
   // Classic pixel-art arrow cursor bitmap (1 = filled, 0 = empty)
   const SHAPE = [
@@ -58,6 +59,7 @@ function initCursor() {
         y: my + (Math.random() - 0.5) * PX,
         alpha: 0.75,
         size: PX * (Math.random() > 0.65 ? 2 : 1),
+        color: TRAIL_COLORS[Math.floor(Math.random() * TRAIL_COLORS.length)],
       });
       lastTrailX = mx; lastTrailY = my;
     }
@@ -67,7 +69,7 @@ function initCursor() {
   document.addEventListener('mouseup',   () => { isDown = false; });
 
   document.addEventListener('click', e => {
-    const COLORS = ['#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#22c55e','#86efac'];
+    const COLORS = ['#ef4444','#f87171','#3b82f6','#60a5fa','#22c55e','#86efac'];
     // Evenly-spread ring of pixels
     for (let i = 0; i < 24; i++) {
       const a = (i / 24) * Math.PI * 2;
@@ -116,7 +118,7 @@ function initCursor() {
       t.alpha *= 0.87;
       if (t.alpha < 0.01) { trail.splice(i, 1); continue; }
       ctx.globalAlpha = t.alpha;
-      ctx.fillStyle = isDown ? '#22c55e' : '#3b82f6';
+      ctx.fillStyle = t.color;
       ctx.fillRect(Math.round(t.x), Math.round(t.y), t.size, t.size);
     }
 
