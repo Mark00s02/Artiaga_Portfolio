@@ -48,8 +48,9 @@ body {
   overflow-x: hidden;
   cursor: none;
 }
-a { color: inherit; text-decoration: none; cursor: none; }
-button { cursor: none; border: none; background: none; font-family: var(--font-body); }
+*, *::before, *::after { cursor: none !important; }
+a { color: inherit; text-decoration: none; }
+button { border: none; background: none; font-family: var(--font-body); }
 img { display: block; max-width: 100%; }
 input, textarea, select {
   font-family: var(--font-mono);

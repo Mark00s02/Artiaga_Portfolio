@@ -32,9 +32,11 @@ function initCursor() {
   const PX = 3; // size of one "pixel" cell in screen px
   const TRAIL_COLORS = ['#ef4444', '#22c55e', '#3b82f6']; // red, green, blue
 
-  // Pixel-art arrow cursor: 0=empty, 1=red, 2=green, 3=blue
-  // Top rows → blue, middle → green, bottom → red
-  const SHAPE = [
+  // 0=empty  1=red  2=green  3=blue  (top→blue, mid→green, bot→red)
+  const PIXEL_COLORS = { 1: '#ef4444', 2: '#22c55e', 3: '#3b82f6' };
+
+  // Arrow (default)
+  const SHAPE_DEFAULT = [
     [3,0,0,0,0,0],
     [3,3,0,0,0,0],
     [3,3,3,0,0,0],
@@ -45,7 +47,44 @@ function initCursor() {
     [0,0,0,1,1,0],
     [0,0,0,0,1,0],
   ];
-  const PIXEL_COLORS = { 1: '#ef4444', 2: '#22c55e', 3: '#3b82f6' };
+
+  // Hand / pointer
+  const SHAPE_POINTER = [
+    [0,3,0,0,0],
+    [0,3,0,0,0],
+    [0,3,3,0,0],
+    [0,2,2,2,0],
+    [2,2,2,2,0],
+    [2,2,2,2,2],
+    [2,2,2,2,2],
+    [1,1,1,1,1],
+    [0,1,1,1,1],
+    [0,1,1,1,1],
+    [0,0,1,1,0],
+  ];
+
+  // I-beam / text
+  const SHAPE_TEXT = [
+    [3,3,3],
+    [0,3,0],
+    [0,2,0],
+    [0,2,0],
+    [0,2,0],
+    [0,1,0],
+    [1,1,1],
+  ];
+
+  let cursorType = 'default';
+  document.addEventListener('mouseover', e => {
+    const el = e.target;
+    if (el.closest('a, button, [role="button"], select, label')) {
+      cursorType = 'pointer';
+    } else if (el.closest('input, textarea, [contenteditable]')) {
+      cursorType = 'text';
+    } else {
+      cursorType = 'default';
+    }
+  });
 
   let mx = -200, my = -200, isDown = false;
   let lastTrailX = -999, lastTrailY = -999;
@@ -98,17 +137,17 @@ function initCursor() {
     }
   });
 
-  function drawCursor(x, y) {
+  function drawCursor(x, y, shape) {
     // Shadow pass
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    for (let r = 0; r < SHAPE.length; r++)
-      for (let c = 0; c < SHAPE[r].length; c++)
-        if (SHAPE[r][c]) ctx.fillRect(x + c*PX + 1, y + r*PX + 1, PX, PX);
-    // Color pass — each cell uses its assigned color
-    for (let r = 0; r < SHAPE.length; r++)
-      for (let c = 0; c < SHAPE[r].length; c++)
-        if (SHAPE[r][c]) {
-          ctx.fillStyle = PIXEL_COLORS[SHAPE[r][c]];
+    for (let r = 0; r < shape.length; r++)
+      for (let c = 0; c < shape[r].length; c++)
+        if (shape[r][c]) ctx.fillRect(x + c*PX + 1, y + r*PX + 1, PX, PX);
+    // Color pass
+    for (let r = 0; r < shape.length; r++)
+      for (let c = 0; c < shape[r].length; c++)
+        if (shape[r][c]) {
+          ctx.fillStyle = PIXEL_COLORS[shape[r][c]];
           ctx.fillRect(x + c*PX, y + r*PX, PX, PX);
         }
   }
@@ -140,7 +179,12 @@ function initCursor() {
     }
 
     ctx.globalAlpha = 1;
-    if (mx > -200) drawCursor(mx, my);
+    if (mx > -200) {
+      const shape = cursorType === 'pointer' ? SHAPE_POINTER
+                  : cursorType === 'text'    ? SHAPE_TEXT
+                  : SHAPE_DEFAULT;
+      drawCursor(mx, my, shape);
+    }
     requestAnimationFrame(animate);
   }
 
