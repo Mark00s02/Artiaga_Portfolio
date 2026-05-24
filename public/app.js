@@ -29,7 +29,7 @@ function initCursor() {
   resize();
   window.addEventListener('resize', resize);
 
-  const PX = 4; // size of one "pixel" cell in screen px
+  const PX = 3; // size of one "pixel" cell in screen px
   const TRAIL_COLORS = ['#ef4444', '#22c55e', '#3b82f6']; // red, green, blue
 
   // 0=empty  1=red  2=green  3=blue  (top→blue, mid→green, bot→red)

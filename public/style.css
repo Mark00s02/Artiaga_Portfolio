@@ -1041,4 +1041,114 @@ footer {
   margin-left: 1px;
 }
 
+/* ============================================================
+   ENHANCED ANIMATIONS
+   ============================================================ */
+
+/* ---- HERO AURORA BLOBS ---- */
+.hero-aurora {
+  position: absolute; border-radius: 50%;
+  filter: blur(72px); pointer-events: none; z-index: 0;
+}
+.hero-aurora-a {
+  width: 520px; height: 300px;
+  background: rgba(59,130,246,0.11);
+  top: 8%; right: 4%;
+  animation: auroraDrift 11s ease-in-out infinite alternate;
+}
+.hero-aurora-b {
+  width: 320px; height: 210px;
+  background: rgba(34,197,94,0.07);
+  bottom: 22%; left: 4%;
+  animation: auroraDrift 15s ease-in-out infinite alternate-reverse;
+}
+@keyframes auroraDrift {
+  from { transform: translate(0,0) scale(1); }
+  to   { transform: translate(35px,-22px) scale(1.12); }
+}
+
+/* ---- HERO FLOATING CODE PARTICLES ---- */
+.hero-fp-wrap {
+  position: absolute; inset: 0;
+  pointer-events: none; overflow: hidden; z-index: 1;
+}
+.hero-fp {
+  position: absolute; bottom: -24px;
+  font-family: var(--font-mono); opacity: 0;
+  animation: fpFloat linear forwards;
+  user-select: none;
+}
+@keyframes fpFloat {
+  0%   { opacity: 0;    transform: translateY(0); }
+  8%   { opacity: 0.5; }
+  88%  { opacity: 0.15; }
+  100% { opacity: 0;    transform: translateY(-110vh); }
+}
+
+/* ---- WORK CARD GLOW PULSE (hover) ---- */
+.work-card:hover {
+  box-shadow: 0 0 24px var(--blue-dim), 0 0 0 1px rgba(59,130,246,0.4);
+  animation: cardGlowPulse 2.2s ease-in-out infinite;
+}
+@keyframes cardGlowPulse {
+  0%,100% { box-shadow: 0 0 24px var(--blue-dim), 0 0 0 1px rgba(59,130,246,0.4); }
+  50%     { box-shadow: 0 0 36px rgba(59,130,246,0.3), 0 0 0 1px rgba(34,197,94,0.5); }
+}
+
+/* ---- ACCENT TEXT GLITCH (hover) ---- */
+@keyframes textGlitch {
+  0%   { text-shadow:  2px 0 #ef4444, -2px 0 #22c55e; transform: skewX(4deg); }
+  25%  { text-shadow: -3px 0 #ef4444,  3px 0 #3b82f6; transform: skewX(-2deg) translateX(2px); }
+  50%  { text-shadow:  2px 0 #22c55e, -2px 0 #ef4444; transform: skewX(2deg); }
+  75%  { text-shadow: -2px 0 #3b82f6,  2px 0 #22c55e; transform: skewX(-3deg) translateX(-1px); }
+  100% { text-shadow: none; transform: skewX(0); }
+}
+.section-title .accent-text:hover,
+.page-hero-title .accent-text:hover,
+.cta-heading .accent-text:hover {
+  animation: textGlitch 0.4s steps(3) both;
+  cursor: default;
+}
+
+/* ---- CTA GLOW PULSE ---- */
+.cta-banner::before {
+  animation: ctaGlowPulse 5s ease-in-out infinite alternate;
+}
+@keyframes ctaGlowPulse {
+  from { transform: translate(-50%,-50%) scale(0.85); opacity: 0.5; }
+  to   { transform: translate(-50%,-50%) scale(1.2);  opacity: 1; }
+}
+
+/* ---- ABOUT GRID SLIDE-IN ---- */
+@keyframes slideFromLeft  { from { transform: translateX(-28px); } to { transform: translateX(0); } }
+@keyframes slideFromRight { from { transform: translateX( 28px); } to { transform: translateX(0); } }
+.about-content.visible .about-image-wrap { animation: slideFromLeft  0.8s cubic-bezier(0.22,1,0.36,1) 0.1s  both; }
+.about-content.visible .about-text       { animation: slideFromRight 0.8s cubic-bezier(0.22,1,0.36,1) 0.25s both; }
+
+/* ---- SKILL TAG POP STAGGER ---- */
+@keyframes skillPop {
+  from { opacity: 0; transform: translateY(10px) scale(0.88); }
+  to   { opacity: 1; transform: none; }
+}
+.about-content.visible .skill-tag                  { animation: skillPop 0.4s ease both; }
+.about-content.visible .skill-tag:nth-child(1)     { animation-delay: 0.05s; }
+.about-content.visible .skill-tag:nth-child(2)     { animation-delay: 0.10s; }
+.about-content.visible .skill-tag:nth-child(3)     { animation-delay: 0.15s; }
+.about-content.visible .skill-tag:nth-child(4)     { animation-delay: 0.20s; }
+.about-content.visible .skill-tag:nth-child(5)     { animation-delay: 0.25s; }
+.about-content.visible .skill-tag:nth-child(6)     { animation-delay: 0.30s; }
+.about-content.visible .skill-tag:nth-child(7)     { animation-delay: 0.35s; }
+.about-content.visible .skill-tag:nth-child(8)     { animation-delay: 0.40s; }
+
+/* ---- CTA CONTENT STAGGER ---- */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cta-banner.visible .cta-text       { animation: fadeSlideUp 0.65s ease 0.1s  both; }
+.cta-banner.visible .cta-action-btn { animation: fadeSlideUp 0.65s ease 0.35s both; }
+
+/* ---- PAGE HERO SLIDE (About / Works / Reviews headers) ---- */
+.page.active .page-hero-inner .section-tag   { animation: slideFromLeft 0.65s cubic-bezier(0.22,1,0.36,1) 0.1s  both; }
+.page.active .page-hero-inner .page-hero-title { animation: slideFromLeft 0.75s cubic-bezier(0.22,1,0.36,1) 0.25s both; }
 
