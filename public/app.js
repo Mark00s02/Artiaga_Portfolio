@@ -29,13 +29,13 @@ function initCursor() {
   resize();
   window.addEventListener('resize', resize);
 
-  const PX = 3; // size of one "pixel" cell in screen px
+  const PX = 4; // size of one "pixel" cell in screen px
   const TRAIL_COLORS = ['#ef4444', '#22c55e', '#3b82f6']; // red, green, blue
 
   // 0=empty  1=red  2=green  3=blue  (top→blue, mid→green, bot→red)
   const PIXEL_COLORS = { 1: '#ef4444', 2: '#22c55e', 3: '#3b82f6' };
 
-  // Arrow (default)
+  // Arrow (default) — tip hot-spot at (0,0), clean diagonal arrow shape
   const SHAPE_DEFAULT = [
     [3,0,0,0,0,0],
     [3,3,0,0,0,0],
@@ -43,24 +43,22 @@ function initCursor() {
     [2,2,2,2,0,0],
     [2,2,2,2,2,0],
     [2,2,2,0,0,0],
-    [1,0,1,1,0,0],
-    [0,0,0,1,1,0],
-    [0,0,0,0,1,0],
+    [1,1,0,1,1,0],
+    [1,0,0,0,1,0],
+    [0,0,0,0,0,1],
   ];
 
-  // Hand / pointer
+  // Hand / pointer — index finger at top, palm below
   const SHAPE_POINTER = [
     [0,3,0,0,0],
     [0,3,0,0,0],
     [0,3,3,0,0],
-    [0,2,2,2,0],
+    [0,3,3,3,0],
     [2,2,2,2,0],
     [2,2,2,2,2],
     [2,2,2,2,2],
     [1,1,1,1,1],
-    [0,1,1,1,1],
-    [0,1,1,1,1],
-    [0,0,1,1,0],
+    [0,1,1,1,0],
   ];
 
   // I-beam / text
