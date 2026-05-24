@@ -9,3 +9,6 @@ node_modules/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Claude Code local config (skills, memory — not for repo)
+.claude/

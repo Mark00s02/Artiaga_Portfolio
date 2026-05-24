@@ -28,11 +28,11 @@
 
 <link rel="stylesheet" href="style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:ital,wght@0,200;0,400;0,700;1,200&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<div class="scanlines"></div>
+<div class="scroll-progress" id="scrollProgress"></div>
 <canvas id="cursorCanvas"></canvas>
 
 <!-- NAV -->
@@ -60,23 +60,21 @@
 <!-- ===== HOME ===== -->
 <div id="page-home" class="page active">
   <section class="hero" id="heroSection">
-    <canvas id="matrixCanvas"></canvas>
     <div class="hero-grid-overlay" id="parallaxGrid"></div>
-    <!-- Parallax floating elements -->
-    <div class="parallax-layer" id="parallaxOrb1"></div>
-    <div class="parallax-layer" id="parallaxOrb2"></div>
-    <div class="parallax-particles" id="parallaxParticles"></div>
-    <div class="parallax-lines" id="parallaxLines"></div>
     <div class="hero-content">
       <div class="hero-prompt">
         <span class="prompt-user">mark00s@dev</span><span class="prompt-sep">:</span><span class="prompt-path">~/portfolio</span><span class="prompt-dollar">$</span>
-        <span class="prompt-cmd" id="typedCmd"></span><span class="cursor-blink">█</span>
+        <span class="prompt-cmd">open portfolio --latest</span>
       </div>
       <h1 class="hero-title">
         <span class="title-line">FULL STACK</span>
         <span class="title-line accent-text">&amp; GAME DEV</span>
       </h1>
       <p class="hero-sub">Building digital experiences that blur the line between web and game. Code that performs. Worlds that immerse.</p>
+      <div class="avail-badge">
+        <span class="avail-badge-dot"></span>
+        <span>Open to new projects</span>
+      </div>
       <div class="hero-btns">
         <button onclick="navigate('works')" class="btn-primary"><span class="btn-icon">▶</span> View Projects</button>
         <button onclick="navigate('about')" class="btn-ghost">cat about.txt →</button>
@@ -86,13 +84,55 @@
         <div class="stack-pills" id="heroStack"></div>
       </div>
     </div>
-    <div class="hero-terminal">
-      <div class="terminal-bar">
-        <span class="t-dot tdred"></span><span class="t-dot tdyellow"></span><span class="t-dot tdgreen"></span>
-        <span class="t-title">mark00s.sh</span>
+    <div class="hero-status" id="heroStatus">
+      <div class="hs-header">
+        <div class="hs-dots">
+          <span class="t-dot tdred"></span>
+          <span class="t-dot tdyellow"></span>
+          <span class="t-dot tdgreen"></span>
+        </div>
+        <span class="hs-title">availability.sh</span>
       </div>
-      <div class="terminal-body" id="terminalBody"></div>
+      <div class="hs-body">
+        <div class="hs-avail">
+          <span class="hs-avail-dot"></span>
+          <span>Available for new projects</span>
+        </div>
+        <div class="hs-rows">
+          <div class="hs-row"><span class="hs-key">response_time</span><span class="hs-val">&lt; 24h</span></div>
+          <div class="hs-row"><span class="hs-key">timezone</span><span class="hs-val">UTC+8 · Philippines</span></div>
+          <div class="hs-row"><span class="hs-key">open_to</span><span class="hs-val">Full-time / Freelance</span></div>
+        </div>
+        <div class="hs-sep"></div>
+        <div class="hs-commit-list">
+          <span class="hs-section-label">// recent commits</span>
+          <div class="hs-commit"><span class="hs-hash">a3f9c12</span><span>feat: real-time multiplayer</span></div>
+          <div class="hs-commit"><span class="hs-hash">b82e1d4</span><span>fix: dungeon gen edge case</span></div>
+          <div class="hs-commit"><span class="hs-hash">c91f3aa</span><span>perf: optimize API queries</span></div>
+          <div class="hs-commit"><span class="hs-hash">d45b2cc</span><span>feat: leaderboard system</span></div>
+        </div>
+        <div class="hs-sep"></div>
+        <div class="hs-langs">
+          <span class="hs-section-label">// top languages</span>
+          <div class="hs-lang-bar-row">
+            <span>JavaScript</span>
+            <div class="hs-bar"><div class="hs-bar-fill" style="width:68%;background:var(--blue)"></div></div>
+            <span>68%</span>
+          </div>
+          <div class="hs-lang-bar-row">
+            <span>C#</span>
+            <div class="hs-bar"><div class="hs-bar-fill" style="width:18%;background:var(--green)"></div></div>
+            <span>18%</span>
+          </div>
+          <div class="hs-lang-bar-row">
+            <span>Python</span>
+            <div class="hs-bar"><div class="hs-bar-fill" style="width:14%;background:#f59e0b"></div></div>
+            <span>14%</span>
+          </div>
+        </div>
+      </div>
     </div>
+    <div class="hero-scroll-hint">scroll</div>
   </section>
 
   <section class="section carousel-section">
@@ -126,9 +166,14 @@
   </section>
 
   <section class="cta-banner">
-    <div class="cta-glitch" data-text="LET'S BUILD SOMETHING.">LET'S BUILD SOMETHING.</div>
-    <p>Got an idea? Let's ship it.</p>
-    <button onclick="openContact()" class="btn-primary"><span class="btn-icon">▶</span> Start a Project</button>
+    <div class="cta-inner">
+      <div class="cta-text">
+        <span class="section-tag">// ready_when_you_are</span>
+        <h2 class="cta-heading"><span class="bracket">[</span>Let's Build<br>Something<span class="accent-text">.</span><span class="bracket">]</span></h2>
+        <p class="cta-sub">Got an idea? I'll get back to you within 24h.</p>
+      </div>
+      <button onclick="openContact()" class="btn-primary cta-action-btn"><span class="btn-icon">▶</span> Start a Project</button>
+    </div>
   </section>
 </div>
 
@@ -186,13 +231,6 @@
       <h1 class="page-hero-title">Code that<br><span class="accent-text">ships.</span></h1>
     </div>
   </section>
-  <!-- KINETIC TYPOGRAPHY COLLAGE -->
-  <div class="ktc-stage" id="ktcStage">
-    <canvas class="ktc-canvas" id="ktcCanvas"></canvas>
-    <div class="ktc-overlay" id="ktcOverlay"></div>
-    <div class="ktc-skip" onclick="skipKTC()">skip →</div>
-  </div>
-
   <section class="section works-section">
     <div class="works-filter" id="worksFilter">
       <button class="filter-btn active" data-filter="all" onclick="filterWorks('all',this)">all</button>
