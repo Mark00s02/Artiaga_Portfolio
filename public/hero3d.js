@@ -5,6 +5,7 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { cameraPose, scrollProgress, damp } from './hero3d-math.js';
 import { createCharacter } from './character.js';
 import { loadActor } from './actor.js';
+import { initReviewsActor } from './reviews-actor.js';
 
 // Swap these paths to change art style (realistic <-> cartoon); no other code changes needed.
 const A = 'assets/3d/';
@@ -25,14 +26,23 @@ const ASSETS = {
   character: {
     texture: `${A}character/character.png`,
     clips: { // seated set only; Typing is required, the rest are optional
-      typing: `${A}character/typing.fbx`,
-      seatedIdle: `${A}character/seated-idle.fbx`,
-      sittingIdle: `${A}character/sitting-idle.fbx`,
-      yell: `${A}character/sitting-yell.fbx`,
-      fist: `${A}character/banging-fist.fbx`,
-      cheer: `${A}character/cheering.fbx`,
-      sitToStand: `${A}character/sit-to-stand.fbx`,
-      standToSit: `${A}character/stand-to-sit.fbx`,
+      typing: `${A}character/desk/typing.fbx`,
+      seatedIdle: `${A}character/desk/seated-idle.fbx`,
+      sittingIdle: `${A}character/desk/sitting-idle.fbx`,
+      yell: `${A}character/desk/sitting-yell.fbx`,
+      fist: `${A}character/desk/banging-fist.fbx`,
+      cheer: `${A}character/desk/cheering.fbx`,
+      sitToStand: `${A}character/desk/sit-to-stand.fbx`,
+      standToSit: `${A}character/desk/stand-to-sit.fbx`,
+    },
+    reviews: { // roaming the "What they say" section; every clip optional
+      falling: `${A}character/reviews/air/falling.fbx`, flying: `${A}character/reviews/air/flying.fbx`, floating: `${A}character/reviews/air/floating.fbx`,
+      swimming: `${A}character/reviews/air/swimming.fbx`, treading: `${A}character/reviews/air/treading-water.fbx`,
+      idle: `${A}character/reviews/ground/idle.fbx`, walking: `${A}character/reviews/ground/walking.fbx`, running: `${A}character/reviews/ground/running.fbx`,
+      injuredWalk: `${A}character/reviews/ground/injured-walking.fbx`, jump: `${A}character/reviews/ground/jump.fbx`, jumpingJacks: `${A}character/reviews/ground/jumping-jacks.fbx`,
+      greeting: `${A}character/reviews/ground/greeting.fbx`, pose: `${A}character/reviews/ground/dynamic-pose.fbx`, trip: `${A}character/reviews/ground/tripping.fbx`,
+      land: `${A}character/reviews/landing/falling-to-landing.fbx`, flatImpact: `${A}character/reviews/landing/falling-flat-impact.fbx`,
+      fallenIdle: `${A}character/reviews/landing/fallen-idle.fbx`, standUp: `${A}character/reviews/landing/standing-up.fbx`,
     },
   },
 };
@@ -45,6 +55,8 @@ const canvas = document.getElementById('hero3d');
 const stage = document.getElementById('hero3dStage');
 const heading = document.querySelector('.carousel-section .section-header');
 const hero = document.getElementById('heroSection');
+initReviewsActor({ section: document.querySelector('.reviews-preview'), modelUrl: ASSETS.character.clips.typing, texture: ASSETS.character.texture, clips: ASSETS.character.reviews });
+
 if (canvas && stage && hero && !canvas.dataset.started) {
   canvas.dataset.started = '1';
   try { start(); } catch (e) { console.info('3D hero disabled:', e.message); }

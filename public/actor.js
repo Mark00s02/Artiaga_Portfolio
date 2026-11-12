@@ -8,9 +8,9 @@ import { damp } from './hero3d-math.js';
 const SCALE = 0.0115;
 const CHAIR_FROM_HIPS = 0.04; // chair origin sits this far behind the hips (world +Z)
 
-export async function loadActor({ scene, files, texture, chair, keyboard, reduced }) {
-  const fbx = new FBXLoader();
-  const man = await fbx.loadAsync(files.typing);
+// Loads the skinned character (any "With Skin" Mixamo FBX of him) and fixes what Mixamo breaks.
+export async function loadCharacterModel(url, texture) {
+  const man = await new FBXLoader().loadAsync(url);
 
   // Mixamo bakes a path from its own server into the FBX, and the OBJ we uploaded had no normals.
   const skinTex = await new THREE.TextureLoader().loadAsync(texture).catch(() => null);
@@ -21,6 +21,13 @@ export async function loadActor({ scene, files, texture, chair, keyboard, reduce
     o.geometry.computeVertexNormals();
     if (skinTex) o.material = new THREE.MeshStandardMaterial({ map: skinTex, roughness: 0.85, metalness: 0 });
   });
+
+  return man;
+}
+
+export async function loadActor({ scene, files, texture, chair, keyboard, reduced }) {
+  const fbx = new FBXLoader();
+  const man = await loadCharacterModel(files.typing, texture);
 
   const rig = new THREE.Group();          // world placement: slide back from the desk / swivel
   rig.rotation.y = Math.PI;               // Mixamo faces +Z; the desk is at -Z

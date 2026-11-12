@@ -1093,3 +1093,7 @@ footer {
   .hero3d-stage::after { background: linear-gradient(180deg, rgba(8,10,16,.9) 0%, rgba(8,10,16,.72) 50%, rgba(8,10,16,.6) 100%); }
   .hero.has-3d .hero-content { justify-content: flex-start; padding-top: 50px; padding-bottom: 0; }
 }
+
+/* ---- REVIEWS ROAMING CHARACTER ---- */
+.reviews-preview { position: relative; overflow: hidden; }
+.reviews-actor { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; display: block; }
