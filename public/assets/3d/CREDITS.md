@@ -22,3 +22,7 @@ All assets below are from [Poly Haven](https://polyhaven.com), licensed [CC0](ht
 ## Character
 
 Character and animations: [Mixamo](https://www.mixamo.com) (Adobe), free for personal and commercial use per Mixamo's terms. Place files in `character/`.
+
+## Character model
+
+Generated from the owner's own reference image with [TRELLIS](https://github.com/microsoft/TRELLIS) (MIT license). Source files live in `assets-src/character/`.
