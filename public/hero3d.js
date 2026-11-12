@@ -43,6 +43,7 @@ const CHAIR_Z = DESK_Z + 0.72;
 
 const canvas = document.getElementById('hero3d');
 const stage = document.getElementById('hero3dStage');
+const heading = document.querySelector('.carousel-section .section-header');
 const hero = document.getElementById('heroSection');
 if (canvas && stage && hero && !canvas.dataset.started) {
   canvas.dataset.started = '1';
@@ -213,9 +214,11 @@ function start() {
     const t = clock.elapsedTime;
     const px = coarse ? Math.sin(t * 0.3) * 0.3 : mx;
     const py = coarse ? Math.sin(t * 0.21) * 0.15 : my;
-    const progress = scrollProgress(scrollY, hero.offsetHeight - innerHeight);
+    // the dolly ends (and the room has faded) as the Selected Builds heading reaches mid-screen
+    const endScroll = heading ? heading.getBoundingClientRect().top + scrollY - innerHeight * 0.45 : hero.offsetHeight - innerHeight;
+    const progress = scrollProgress(scrollY, endScroll);
     if (isReady) { // hand off to the page: fade the room out over the last 15% of the dolly
-      const o = Math.min(1, (1 - progress) / 0.15);
+      const o = Math.min(1, (1 - progress) / 0.3);
       stage.style.opacity = o; stage.style.visibility = o > 0 ? 'visible' : 'hidden';
       if (o === 0) { raf = requestAnimationFrame(frame); return; }
     }

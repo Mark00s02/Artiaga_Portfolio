@@ -1081,10 +1081,15 @@ footer {
 .hero.has-3d .hero-content {
   position: sticky; top: 0; min-height: 100vh;
   display: flex; flex-direction: column; justify-content: center;
+  padding-bottom: 16vh; /* sit a little above centre */
 }
+/* sections scroll over the fixed 3D stage; the top of Selected Builds is see-through so its
+   heading lands on the fading room instead of on a flat panel */
+.hero.has-3d ~ .section, .hero.has-3d ~ .cta-banner { position: relative; z-index: 2; }
+.hero.has-3d + .carousel-section { background: linear-gradient(to bottom, transparent 0, transparent 30vh, var(--bg2) 70vh); border-top-color: transparent; }
 .hero.has-3d .avail-badge { align-self: flex-start; }
 .hero.has-3d .hero-scroll-hint { bottom: auto; top: calc(100vh - 3rem); }
 @media (max-width: 900px) {
   .hero3d-stage::after { background: linear-gradient(180deg, rgba(8,10,16,.9) 0%, rgba(8,10,16,.72) 50%, rgba(8,10,16,.6) 100%); }
-  .hero.has-3d .hero-content { justify-content: flex-start; padding-top: 90px; }
+  .hero.has-3d .hero-content { justify-content: flex-start; padding-top: 50px; padding-bottom: 0; }
 }

@@ -2,6 +2,7 @@
 export const REST = { pos: [2.5, 1.75, 3.1], target: [-0.75, 0.95, -0.55] };
 export const SCREEN = { pos: [0.34, 1.15, -0.35], target: [0.42, 1.15, -1.2] };
 export const PARALLAX = 0.35;
+export const ARC = 0.45; // dolly lifts this high mid-way so it passes over the character, not through him
 
 const clamp01 = v => Math.min(1, Math.max(0, v));
 const lerp = (a, b, t) => a * (1 - t) + b * t; // exact at t=0 and t=1
@@ -17,6 +18,7 @@ export function cameraPose(mx, my, progress, reduced) {
   const k = PARALLAX * (1 - t);
   const pos = REST.pos.map((v, i) => lerp(v, SCREEN.pos[i], t));
   const target = REST.target.map((v, i) => lerp(v, SCREEN.target[i], t));
+  pos[1] += 4 * t * (1 - t) * ARC; // exactly 0 at both ends
   if (k) { pos[0] += mx * k; pos[1] += my * k; }
   return { pos, target };
 }

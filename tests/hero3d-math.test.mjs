@@ -52,3 +52,11 @@ test('solveTwoBone clamps an out-of-reach target onto the reach sphere', () => {
   near(dist([0, 0, 0], elbow), 0.26, 1e-6);
   near(dist(elbow, hand), 0.25, 1e-6);
 });
+
+import { ARC } from '../public/hero3d-math.js';
+test('dolly arcs upward mid-way (over the character) but keeps exact endpoints', () => {
+  const mid = cameraPose(0, 0, 0.5, false).pos[1];
+  const straight = (REST.pos[1] + SCREEN.pos[1]) / 2;
+  near(mid - straight, ARC, 1e-9);
+  assert.deepEqual(cameraPose(0, 0, 1, false).pos, SCREEN.pos);
+});
