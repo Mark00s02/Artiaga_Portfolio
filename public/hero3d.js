@@ -202,15 +202,14 @@ function start() {
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; tick(); }).observe(hero);
   document.addEventListener('visibilitychange', tick);
   const clock = new THREE.Clock();
-  let running = false, lastCode = 0, isReady = false;
+  let raf = 0, lastCode = 0, isReady = false;
 
   function tick() {
     const should = visible && !document.hidden;
-    if (should && !running) { running = true; clock.getDelta(); requestAnimationFrame(frame); }
-    if (!should) running = false;
+    if (should && !raf) { clock.getDelta(); raf = requestAnimationFrame(frame); }
+    if (!should) { cancelAnimationFrame(raf); raf = 0; } // cancel, so a resume can't start a second chain
   }
   function frame(now) {
-    if (!running) return;
     const dt = Math.min(clock.getDelta(), 0.1);
     const t = clock.elapsedTime;
     const px = coarse ? Math.sin(t * 0.3) * 0.3 : mx;
@@ -219,7 +218,7 @@ function start() {
     if (isReady) { // hand off to the page: fade the room out over the last 15% of the dolly
       const o = Math.min(1, (1 - progress) / 0.15);
       stage.style.opacity = o; stage.style.visibility = o > 0 ? 'visible' : 'hidden';
-      if (o === 0) { requestAnimationFrame(frame); return; }
+      if (o === 0) { raf = requestAnimationFrame(frame); return; }
     }
     const pose = cameraPose(px, py, progress, reduced);
     const ease = reduced ? 0 : Math.min(1, progress * 1.6);
@@ -237,7 +236,7 @@ function start() {
     if (now - lastCode > 120) { code.step(); lastCode = now; }
     mixer?.update(dt);
     renderer.render(scene, camera);
-    requestAnimationFrame(frame);
+    raf = requestAnimationFrame(frame);
   }
 
   Promise.allSettled([envReady, deskReady]).then(() => {
