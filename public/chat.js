@@ -4,30 +4,19 @@
 
 let chatOpen = false;
 let chatHistory = []; // { role: 'user'|'assistant', content: string }
-let chatNotified = false;
 
-// Show a little notification badge after 4 seconds to invite visitors
-setTimeout(() => {
-  if (!chatOpen && !chatNotified) {
-    const notif = document.getElementById('chatNotif');
-    if (notif) { notif.textContent = '1'; notif.style.display = 'flex'; }
-    chatNotified = true;
-  }
-}, 4000);
 
 function toggleChat() {
   chatOpen = !chatOpen;
   const win   = document.getElementById('chatWindow');
   const icon  = document.getElementById('chatFabIcon');
   const close = document.getElementById('chatFabClose');
-  const notif = document.getElementById('chatNotif');
 
   win.classList.toggle('open', chatOpen);
   icon.style.display  = chatOpen ? 'none'  : 'flex';
   close.style.display = chatOpen ? 'flex'  : 'none';
 
   if (chatOpen) {
-    if (notif) notif.style.display = 'none';
     setTimeout(() => document.getElementById('chatInput')?.focus(), 300);
     scrollChatToBottom();
   }

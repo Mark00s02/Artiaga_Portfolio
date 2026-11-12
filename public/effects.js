@@ -58,23 +58,6 @@ function initScramble() {
   });
 }
 
-// ---- HERO SPOTLIGHT ----
-function initSpotlight() {
-  const hero = document.getElementById('heroSection');
-  if (!hero) return;
-  let spot = hero.querySelector('.hero-spotlight');
-  if (!spot) {
-    spot = document.createElement('div');
-    spot.className = 'hero-spotlight';
-    hero.insertBefore(spot, hero.firstChild);
-  }
-  hero.addEventListener('mousemove', e => {
-    const r = hero.getBoundingClientRect();
-    spot.style.background = `radial-gradient(700px circle at ${e.clientX - r.left}px ${e.clientY - r.top}px, rgba(59,130,246,0.09), transparent 55%)`;
-  });
-  hero.addEventListener('mouseleave', () => { spot.style.background = ''; });
-}
-
 // ---- 3D CARD TILT ----
 function initCardTilt() {
   document.querySelectorAll('.work-card').forEach(card => {
@@ -192,46 +175,6 @@ function initImageScan() {
 }
 
 // ---- HERO AURORA BLOBS ----
-function initHeroAurora() {
-  const hero = document.getElementById('heroSection');
-  if (!hero) return;
-  ['hero-aurora-a', 'hero-aurora-b'].forEach(cls => {
-    const d = document.createElement('div');
-    d.className = `hero-aurora ${cls}`;
-    hero.insertBefore(d, hero.firstChild);
-  });
-}
-
-// ---- HERO FLOATING CODE PARTICLES ----
-function initHeroParticles() {
-  const hero = document.getElementById('heroSection');
-  if (!hero) return;
-  const SYMS = ['{}', '//', '<>', '[]', '=>', '&&', '||', '0x', '++', '--', 'fn', '**', '!=', '()'];
-  const wrap = document.createElement('div');
-  wrap.className = 'hero-fp-wrap';
-  hero.insertBefore(wrap, hero.firstChild);
-
-  function spawn() {
-    if (!document.getElementById('page-home')?.classList.contains('active')) return;
-    const el = document.createElement('span');
-    el.className = 'hero-fp';
-    el.textContent = SYMS[Math.floor(Math.random() * SYMS.length)];
-    const dur = 10 + Math.random() * 14;
-    el.style.left            = (5 + Math.random() * 88) + '%';
-    el.style.animationDuration = dur + 's';
-    el.style.animationDelay   = (Math.random() * 2) + 's';
-    el.style.color            = Math.random() > 0.55 ? 'var(--blue)' : 'var(--green)';
-    el.style.fontSize         = (0.5 + Math.random() * 0.45) + 'rem';
-    wrap.appendChild(el);
-    setTimeout(() => el.remove(), (dur + 2) * 1000);
-  }
-
-  for (let i = 0; i < 14; i++) setTimeout(spawn, Math.random() * 3500);
-  setInterval(() => {
-    if (wrap.children.length < 18 && document.getElementById('page-home')?.classList.contains('active')) spawn();
-  }, 1400);
-}
-
 // ---- REVEAL CHILDREN (CTA banner + anything not covered by .section observer) ----
 function initRevealChildren() {
   const obs = new IntersectionObserver(entries => {
@@ -248,7 +191,6 @@ function initRevealChildren() {
 
 // ---- INIT ----
 function initAllEffects() {
-  initSpotlight();
   initMagneticBtns();
   initNavChroma();
   initStatGlow();
@@ -256,8 +198,6 @@ function initAllEffects() {
   initMarqueeLift();
   initImageScan();
   initPageTransition();
-  initHeroAurora();
-  initHeroParticles();
   initRevealChildren();
 }
 
