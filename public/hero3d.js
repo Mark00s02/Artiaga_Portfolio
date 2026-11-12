@@ -22,7 +22,7 @@ const ASSETS = {
   stationery: M('stationery_supplies'),
   shelf: M('Shelf_01'),
   sideTable: M('WoodenTable_02'),
-  character: { typing: `${A}character/typing.fbx`, idle: `${A}character/idle.fbx` },
+  character: { typing: `${A}character/typing.fbx`, idle: `${A}character/idle.fbx`, texture: `${A}character/character.png` },
 };
 
 const DESK_TOP = 0.79;
@@ -164,7 +164,15 @@ function start() {
     man.scale.setScalar(0.01); // Mixamo is in cm
     man.position.set(0, 0, CHAIR_Z - 0.2);
     man.rotation.y = Math.PI; // face the desk
-    man.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; o.frustumCulled = false; } });
+    // Mixamo bakes a path from its own server into the FBX, so apply the texture ourselves
+    const skinTex = await new THREE.TextureLoader().loadAsync(ASSETS.character.texture).catch(() => null);
+    if (skinTex) skinTex.colorSpace = THREE.SRGBColorSpace;
+    man.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = o.receiveShadow = true; o.frustumCulled = false;
+      o.geometry.computeVertexNormals(); // the OBJ sent to Mixamo had no normals
+      if (skinTex) o.material = new THREE.MeshStandardMaterial({ map: skinTex, roughness: 0.85, metalness: 0 });
+    });
     scene.add(man);
     mixer = new THREE.AnimationMixer(man);
     const typing = mixer.clipAction(man.animations[0]);
