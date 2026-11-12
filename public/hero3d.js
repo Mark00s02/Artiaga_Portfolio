@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { cameraPose, scrollProgress, damp } from './hero3d-math.js';
+import { createCharacter } from './character.js';
 
 // Swap these paths to change art style (realistic <-> cartoon); no other code changes needed.
 const A = 'assets/3d/';
@@ -26,6 +27,7 @@ const ASSETS = {
 
 const DESK_TOP = 0.79;
 const DESK_Z = -0.7;
+const CHAIR_Z = DESK_Z + 0.72;
 
 const canvas = document.getElementById('hero3d');
 const stage = document.getElementById('hero3dStage');
@@ -135,8 +137,9 @@ function start() {
 
   // ---- props ----
   const deskReady = loadGltf(ASSETS.desk).then(o => place(o, [0, 0, DESK_Z]));
+  const chairReady = loadGltf(ASSETS.chair).then(o => place(o, [0, 0, CHAIR_Z], Math.PI));
   const props = [
-    loadGltf(ASSETS.chair).then(o => place(o, [0, 0, DESK_Z + 0.85], Math.PI)),
+    chairReady,
     loadGltf(ASSETS.lamp).then(o => place(o, [0.82, DESK_TOP + 0.09, DESK_Z - 0.15], -2.2)),
     loadGltf(ASSETS.plants[0]).then(o => place(o, [-1.65, 0, -0.95])),
     loadGltf(ASSETS.plants[1]).then(o => place(o, [-0.82, DESK_TOP, DESK_Z - 0.2], 0.4)),
@@ -149,13 +152,17 @@ function start() {
     rs.filter(r => r.status === 'rejected').forEach(r => console.info('3D prop skipped:', r.reason?.message || r.reason)));
 
   // ---- character (optional) ----
-  let mixer = null;
-  loadCharacter().catch(e => console.info('3D character not loaded:', e?.message || e));
+  let mixer = null, character = null;
+  // Mixamo FBX if present, otherwise the built-in procedural character
+  loadCharacter().catch(async () => {
+    const chair = await chairReady.catch(() => null);
+    character = createCharacter({ scene, chair, seat: [0, 0.5, CHAIR_Z - 0.02], keyboard: kb.position, mouse: mouse.position, camera, reduced });
+  });
   async function loadCharacter() {
     const fbx = new FBXLoader();
     const man = await fbx.loadAsync(ASSETS.character.typing);
     man.scale.setScalar(0.01); // Mixamo is in cm
-    man.position.set(0, 0, DESK_Z + 0.62);
+    man.position.set(0, 0, CHAIR_Z - 0.2);
     man.rotation.y = Math.PI; // face the desk
     man.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; o.frustumCulled = false; } });
     scene.add(man);
@@ -235,6 +242,7 @@ function start() {
     camera.lookAt(camTarget);
     if (now - lastCode > 120) { code.step(); lastCode = now; }
     mixer?.update(dt);
+    character?.update(dt);
     renderer.render(scene, camera);
     raf = requestAnimationFrame(frame);
   }

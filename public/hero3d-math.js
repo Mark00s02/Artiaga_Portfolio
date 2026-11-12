@@ -24,3 +24,20 @@ export function cameraPose(mx, my, progress, reduced) {
 export function damp(current, target, lambda, dt) {
   return target + (current - target) * Math.exp(-lambda * dt);
 }
+
+// Two-bone IK (shoulder->elbow->wrist). Arrays of [x,y,z]; elbow bends toward `pole`.
+export function solveTwoBone(s, t, l1, l2, pole) {
+  const sub = (a, b) => a.map((v, i) => v - b[i]);
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const d = sub(t, s), len = Math.hypot(...d) || 1e-6;
+  const dir = d.map(v => v / len);
+  const reach = Math.min(Math.max(len, Math.abs(l1 - l2) + 1e-4), l1 + l2 - 1e-4);
+  const hand = reach === len ? t.slice() : s.map((v, i) => v + dir[i] * reach);
+  const a = (l1 * l1 - l2 * l2 + reach * reach) / (2 * reach);
+  const h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+  let p = sub(pole, dir.map(v => v * dot(pole, dir)));
+  const pl = Math.hypot(...p);
+  p = pl > 1e-6 ? p.map(v => v / pl) : [0, -1, 0];
+  const elbow = s.map((v, i) => v + dir[i] * a + p[i] * h);
+  return { elbow, hand };
+}

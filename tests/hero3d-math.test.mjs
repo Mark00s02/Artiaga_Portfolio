@@ -30,3 +30,25 @@ test('damp is frame-rate independent ease', () => {
   assert.equal(damp(0, 10, 5, 0), 0);
   near(damp(0, 10, 5, 1000), 10);
 });
+
+import { solveTwoBone } from '../public/hero3d-math.js';
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+
+test('solveTwoBone reaches a reachable target with correct bone lengths', () => {
+  const { elbow, hand } = solveTwoBone([0, 0, 0], [0.3, -0.2, -0.1], 0.26, 0.25, [1, -1, 0]);
+  assert.deepEqual(hand, [0.3, -0.2, -0.1]);
+  near(dist([0, 0, 0], elbow), 0.26, 1e-6);
+  near(dist(elbow, hand), 0.25, 1e-6);
+});
+
+test('solveTwoBone bends the elbow toward the pole', () => {
+  const { elbow } = solveTwoBone([0, 0, 0], [0, -0.4, 0], 0.26, 0.25, [1, 0, 0]);
+  assert.ok(elbow[0] > 0.05, `elbow x ${elbow[0]}`);
+});
+
+test('solveTwoBone clamps an out-of-reach target onto the reach sphere', () => {
+  const { elbow, hand } = solveTwoBone([0, 0, 0], [2, 0, 0], 0.26, 0.25, [0, -1, 0]);
+  near(dist([0, 0, 0], hand), 0.51, 1e-3);
+  near(dist([0, 0, 0], elbow), 0.26, 1e-6);
+  near(dist(elbow, hand), 0.25, 1e-6);
+});
