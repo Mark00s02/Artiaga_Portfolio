@@ -1,10 +1,10 @@
 // hero3d.js — 3D dev room behind the home hero. Self-starting ES module.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { cameraPose, scrollProgress, damp } from './hero3d-math.js';
 import { createCharacter } from './character.js';
+import { loadActor } from './actor.js';
 
 // Swap these paths to change art style (realistic <-> cartoon); no other code changes needed.
 const A = 'assets/3d/';
@@ -22,7 +22,19 @@ const ASSETS = {
   stationery: M('stationery_supplies'),
   shelf: M('Shelf_01'),
   sideTable: M('WoodenTable_02'),
-  character: { typing: `${A}character/typing.fbx`, idle: `${A}character/idle.fbx`, texture: `${A}character/character.png` },
+  character: {
+    texture: `${A}character/character.png`,
+    clips: { // seated set only; Typing is required, the rest are optional
+      typing: `${A}character/typing.fbx`,
+      seatedIdle: `${A}character/seated-idle.fbx`,
+      sittingIdle: `${A}character/sitting-idle.fbx`,
+      yell: `${A}character/sitting-yell.fbx`,
+      fist: `${A}character/banging-fist.fbx`,
+      cheer: `${A}character/cheering.fbx`,
+      sitToStand: `${A}character/sit-to-stand.fbx`,
+      standToSit: `${A}character/stand-to-sit.fbx`,
+    },
+  },
 };
 
 const DESK_TOP = 0.79;
@@ -152,44 +164,16 @@ function start() {
     rs.filter(r => r.status === 'rejected').forEach(r => console.info('3D prop skipped:', r.reason?.message || r.reason)));
 
   // ---- character (optional) ----
-  let mixer = null, character = null;
-  // Mixamo FBX if present, otherwise the built-in procedural character
-  loadCharacter().catch(async () => {
-    const chair = await chairReady.catch(() => null);
-    character = createCharacter({ scene, chair, seat: [0, 0.5, CHAIR_Z - 0.02], keyboard: kb.position, mouse: mouse.position, camera, reduced });
+  let character = null;
+  // the rigged Mixamo character if its files are present, otherwise the built-in procedural one
+  chairReady.catch(() => null).then(async chair => {
+    try {
+      character = await loadActor({ scene, files: ASSETS.character.clips, texture: ASSETS.character.texture, chair, keyboard: kb.position, reduced });
+    } catch (e) {
+      console.info('Mixamo character not loaded, using built-in one:', e?.message || e);
+      character = createCharacter({ scene, chair, seat: [0, 0.5, CHAIR_Z - 0.02], keyboard: kb.position, mouse: mouse.position, camera, reduced });
+    }
   });
-  async function loadCharacter() {
-    const fbx = new FBXLoader();
-    const man = await fbx.loadAsync(ASSETS.character.typing);
-    man.scale.setScalar(0.01); // Mixamo is in cm
-    man.position.set(0, 0, CHAIR_Z - 0.2);
-    man.rotation.y = Math.PI; // face the desk
-    // Mixamo bakes a path from its own server into the FBX, so apply the texture ourselves
-    const skinTex = await new THREE.TextureLoader().loadAsync(ASSETS.character.texture).catch(() => null);
-    if (skinTex) skinTex.colorSpace = THREE.SRGBColorSpace;
-    man.traverse(o => {
-      if (!o.isMesh) return;
-      o.castShadow = o.receiveShadow = true; o.frustumCulled = false;
-      o.geometry.computeVertexNormals(); // the OBJ sent to Mixamo had no normals
-      if (skinTex) o.material = new THREE.MeshStandardMaterial({ map: skinTex, roughness: 0.85, metalness: 0 });
-    });
-    scene.add(man);
-    mixer = new THREE.AnimationMixer(man);
-    const typing = mixer.clipAction(man.animations[0]);
-    typing.play();
-    const idleClip = await fbx.loadAsync(ASSETS.character.idle).then(f => f.animations[0]).catch(() => null);
-    if (!idleClip) return;
-    const idle = mixer.clipAction(idleClip);
-    idle.setLoop(THREE.LoopOnce, 1); idle.clampWhenFinished = true;
-    const schedule = () => setTimeout(() => {
-      idle.reset().play(); typing.crossFadeTo(idle, 0.6, false);
-    }, 12000 + Math.random() * 8000);
-    mixer.addEventListener('finished', e => {
-      if (e.action !== idle) return;
-      typing.reset().play(); idle.crossFadeTo(typing, 0.6, false); schedule();
-    });
-    schedule();
-  }
 
   // ---- input ----
   let mx = 0, my = 0;
@@ -249,7 +233,6 @@ function start() {
     camera.position.copy(camPos);
     camera.lookAt(camTarget);
     if (now - lastCode > 120) { code.step(); lastCode = now; }
-    mixer?.update(dt);
     character?.update(dt);
     renderer.render(scene, camera);
     raf = requestAnimationFrame(frame);
