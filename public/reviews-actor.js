@@ -61,6 +61,7 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
     const loaded = await Promise.allSettled(names.map(n => fbx.loadAsync(files[n])));
     const clips = {};
     loaded.forEach((r, i) => { if (r.status === 'fulfilled' && r.value.animations[0]) clips[names[i]] = inPlace(r.value.animations[0]); });
+    if (clips.stand) clips.standStill = clips.stand.clone(); // 'Stand' is a get-up move; its last frame is our still pose
     const has = n => !!clips[n];
 
     const mixer = new THREE.AnimationMixer(man);
@@ -69,7 +70,7 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
       const a = mixer.clipAction(clip); a.reset().play(); a.time = 0; mixer.update(0);
       const y = man.worldToLocal(hips.getWorldPosition(new THREE.Vector3())).y * SCALE; a.stop(); return y;
     };
-    const standHips = has('idle') ? hipsY(clips.idle) : 0.95;
+    const standHips = has('walking') ? hipsY(clips.walking) : 0.95; // upright hip height
     // landing clips start in the air: begin them this far above the floor
     const lead = Object.fromEntries(['land', 'flatImpact'].filter(has).map(n => [n, Math.max(0, hipsY(clips[n]) - standHips)]));
 
@@ -100,6 +101,7 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
       const next = actions[name];
       if (!next) return Promise.resolve();
       next.reset().play();
+      if (name === 'standStill') { next.time = next.getClip().duration; next.paused = true; } // hold the final frame
       if (current && current !== next) current.crossFadeTo(next, fade, false);
       current = next;
       if (!ONCE.has(name)) return Promise.resolve();
@@ -144,7 +146,7 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
       }
     }
 
-    const idle = async (g, t = rnd(0.8, 1.6)) => { if (has('idle')) { faceViewer(); play('idle'); await wait(t, g); } };
+    const idle = async (g, t = rnd(0.8, 1.6)) => { if (has('standStill')) { faceViewer(); play('standStill', 0.4); await wait(t, g); } };
     const takeOff = async g => { // a hop into the air, flying starts at the top of it
       if (has('jump')) { play('jump', 0.2); await wait(0.45, g); }
     };
@@ -155,7 +157,7 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
     };
     const sequences = [
       // stroll somewhere and look around
-      [3, ['walking'], async g => { const x = farX(); faceTo(x); play('walking'); await moveTo(x, floorY(), 1.1, g); await idle(g); }],
+      [3, ['walking'], async g => { const x = farX(); faceTo(x); play('walking'); await moveTo(x, floorY(), 1.1, g); }],
       // sprint across; going too fast at the end sometimes makes him trip, then he gets up
       [2, ['running'], async g => {
         const x = farX(); faceTo(x); play('running'); await moveTo(x, floorY(), 3.2, g);
@@ -163,7 +165,6 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
           await play('trip', 0.15); if (has('fallenIdle')) { play('fallenIdle'); await wait(0.8, g); }
           await play('standUp');
         }
-        await idle(g);
       }],
       // workout, then a victory pose to the viewer
       [1, ['jumpingJacks'], async g => {

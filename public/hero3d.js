@@ -38,7 +38,7 @@ const ASSETS = {
     reviews: { // roaming the "What they say" section; every clip optional
       falling: `${A}character/reviews/air/falling.fbx`, flying: `${A}character/reviews/air/flying.fbx`, floating: `${A}character/reviews/air/floating.fbx`,
       swimming: `${A}character/reviews/air/swimming.fbx`, treading: `${A}character/reviews/air/treading-water.fbx`,
-      idle: `${A}character/reviews/ground/idle.fbx`, walking: `${A}character/reviews/ground/walking.fbx`, running: `${A}character/reviews/ground/running.fbx`,
+      stand: `${A}character/reviews/ground/stand.fbx`, walking: `${A}character/reviews/ground/walking.fbx`, running: `${A}character/reviews/ground/running.fbx`,
       injuredWalk: `${A}character/reviews/ground/injured-walking.fbx`, jump: `${A}character/reviews/ground/jump.fbx`, jumpingJacks: `${A}character/reviews/ground/jumping-jacks.fbx`,
       greeting: `${A}character/reviews/ground/greeting.fbx`, pose: `${A}character/reviews/ground/dynamic-pose.fbx`, trip: `${A}character/reviews/ground/tripping.fbx`,
       land: `${A}character/reviews/landing/falling-to-landing.fbx`, flatImpact: `${A}character/reviews/landing/falling-flat-impact.fbx`,
