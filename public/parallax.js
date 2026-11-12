@@ -4,54 +4,20 @@
 
 (function () {
 
-  const LAYERS = [
-    { id: 'parallaxGrid', speedY: 0.06, speedX: 0.02 },
-  ];
-
-  let ticking = false, lastMouseX = 0, lastMouseY = 0;
-
-  function applyParallax() {
-    const scrollY = window.scrollY;
-    const hero = document.getElementById('heroSection');
-    if (!hero) { ticking = false; return; }
-    if (scrollY > hero.offsetHeight * 1.5) { ticking = false; return; }
-
-    LAYERS.forEach(({ id, speedY, speedX }) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const ty = -(scrollY * speedY);
-      const mx = (lastMouseX - window.innerWidth  / 2) * speedX * 0.03;
-      const my = (lastMouseY - window.innerHeight / 2) * speedX * 0.03;
-      el.style.transform = `translate3d(${mx}px, ${ty + my}px, 0)`;
-    });
-    ticking = false;
-  }
-
-  window.addEventListener('scroll', () => {
-    if (!ticking) { requestAnimationFrame(applyParallax); ticking = true; }
-  }, { passive: true });
-
-  document.addEventListener('mousemove', e => {
-    lastMouseX = e.clientX; lastMouseY = e.clientY;
-    if (window.scrollY < window.innerHeight) requestAnimationFrame(applyParallax);
-  });
-
   function applyHeroFade() {
     const hero    = document.getElementById('heroSection');
     const content = hero?.querySelector('.hero-content');
     const status  = hero?.querySelector('.hero-status');
     if (!content) return;
     const scrollY = window.scrollY, heroH = hero.offsetHeight;
-    const fadeStart = heroH * 0.25, fadeEnd = heroH * 0.7;
-    if (scrollY <= fadeStart) {
-      content.style.opacity = '1'; content.style.transform = 'translateY(0)';
-      if (status) { status.style.opacity = '1'; status.style.transform = 'translateY(0)'; }
-    } else if (scrollY < fadeEnd) {
-      const p = (scrollY - fadeStart) / (fadeEnd - fadeStart);
-      content.style.opacity = 1 - p * 0.85;
-      content.style.transform = `translateY(-${p * 28}px)`;
-      if (status) { status.style.opacity = 1 - p * 0.85; status.style.transform = `translateY(-${p * 14}px)`; }
-    }
+    // with the 3D hero the section is 2 screens tall; fade the text during the first screen of scroll
+    const span = hero.classList.contains('has-3d') ? heroH - innerHeight : heroH;
+    const fadeStart = span * 0.1, fadeEnd = span * 0.6;
+    const p = Math.min(1, Math.max(0, (scrollY - fadeStart) / (fadeEnd - fadeStart)));
+    const o = 1 - p * (hero.classList.contains('has-3d') ? 1 : 0.85);
+    content.style.opacity = o;
+    content.style.transform = `translateY(-${p * 28}px)`;
+    if (status) { status.style.opacity = o; status.style.transform = `translateY(-${p * 14}px)`; }
   }
   window.addEventListener('scroll', () => requestAnimationFrame(applyHeroFade), { passive: true });
 
@@ -71,7 +37,6 @@
   }
 
   function init() {
-    applyParallax();
     heroEntrance();
   }
 

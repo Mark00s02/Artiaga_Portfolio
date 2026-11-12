@@ -28,8 +28,9 @@ const DESK_TOP = 0.79;
 const DESK_Z = -0.7;
 
 const canvas = document.getElementById('hero3d');
+const stage = document.getElementById('hero3dStage');
 const hero = document.getElementById('heroSection');
-if (canvas && hero && !canvas.dataset.started) {
+if (canvas && stage && hero && !canvas.dataset.started) {
   canvas.dataset.started = '1';
   try { start(); } catch (e) { console.info('3D hero disabled:', e.message); }
 }
@@ -183,14 +184,17 @@ function start() {
   }, { passive: true });
 
   // ---- size ----
+  let portrait = false;
   const resize = () => {
-    const w = hero.clientWidth, h = Math.min(hero.clientHeight, innerHeight);
+    const w = stage.clientWidth, h = stage.clientHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.fov = w < 700 ? 52 : 38;
+    portrait = w / h < 0.8;
+    if (!portrait) camera.clearViewOffset();
     camera.updateProjectionMatrix();
   };
-  new ResizeObserver(resize).observe(hero);
+  new ResizeObserver(resize).observe(stage);
   resize();
 
   // ---- loop (paused when hero hidden / tab hidden) ----
@@ -198,7 +202,7 @@ function start() {
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; tick(); }).observe(hero);
   document.addEventListener('visibilitychange', tick);
   const clock = new THREE.Clock();
-  let running = false, lastCode = 0;
+  let running = false, lastCode = 0, isReady = false;
 
   function tick() {
     const should = visible && !document.hidden;
@@ -211,7 +215,19 @@ function start() {
     const t = clock.elapsedTime;
     const px = coarse ? Math.sin(t * 0.3) * 0.3 : mx;
     const py = coarse ? Math.sin(t * 0.21) * 0.15 : my;
-    const pose = cameraPose(px, py, scrollProgress(scrollY, hero.offsetHeight), reduced);
+    const progress = scrollProgress(scrollY, hero.offsetHeight - innerHeight);
+    if (isReady) { // hand off to the page: fade the room out over the last 15% of the dolly
+      const o = Math.min(1, (1 - progress) / 0.15);
+      stage.style.opacity = o; stage.style.visibility = o > 0 ? 'visible' : 'hidden';
+      if (o === 0) { requestAnimationFrame(frame); return; }
+    }
+    const pose = cameraPose(px, py, progress, reduced);
+    const ease = reduced ? 0 : Math.min(1, progress * 1.6);
+    stage.style.setProperty('--scrim', 1 - ease); // scrim fades as the text does
+    if (portrait) { // pan right so the desk is centred; recentre on the monitor during the dolly
+      const w = stage.clientWidth, h = stage.clientHeight;
+      camera.setViewOffset(w, h, w * 0.45 * (1 - ease), h * 0.08 * (1 - ease), w, h);
+    }
     for (let i = 0; i < 3; i++) {
       camPos.setComponent(i, damp(camPos.getComponent(i), pose.pos[i], 4, dt));
       camTarget.setComponent(i, damp(camTarget.getComponent(i), pose.target[i], 4, dt));
@@ -226,7 +242,10 @@ function start() {
 
   Promise.allSettled([envReady, deskReady]).then(() => {
     resize(); tick();
-    requestAnimationFrame(() => { canvas.classList.add('ready'); hero.classList.add('has-3d'); });
+    requestAnimationFrame(() => {
+      stage.classList.add('ready'); hero.classList.add('has-3d');
+      setTimeout(() => { stage.style.transition = 'none'; isReady = true; }, 1300); // after the CSS fade-in
+    });
   });
 }
 
