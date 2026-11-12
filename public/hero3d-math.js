@@ -1,6 +1,6 @@
 // Pure camera math for the 3D hero (no Three.js), tested by tests/hero3d-math.test.mjs.
-export const REST = { pos: [1.6, 1.55, 3.2], target: [0, 1.0, 0] };
-export const SCREEN = { pos: [0.05, 1.12, 0.05], target: [0.05, 1.12, -0.6] };
+export const REST = { pos: [2.5, 1.75, 3.1], target: [-0.75, 0.95, -0.55] };
+export const SCREEN = { pos: [0.34, 1.15, -0.35], target: [0.42, 1.15, -1.2] };
 export const PARALLAX = 0.35;
 
 const clamp01 = v => Math.min(1, Math.max(0, v));

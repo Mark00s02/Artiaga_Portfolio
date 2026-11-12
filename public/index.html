@@ -29,6 +29,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
 
@@ -59,6 +60,7 @@
 <!-- ===== HOME ===== -->
 <div id="page-home" class="page active">
   <section class="hero" id="heroSection">
+    <canvas id="hero3d" aria-hidden="true"></canvas>
     <div class="hero-grid-overlay" id="parallaxGrid"></div>
     <div class="hero-content">
       <div class="hero-prompt">
@@ -497,3 +499,4 @@
 <script src="chat.js"></script>
 <script src="parallax.js"></script>
 <script src="effects.js"></script>
+<script type="module" src="hero3d.js"></script>
