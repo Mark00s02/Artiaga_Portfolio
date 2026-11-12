@@ -9,6 +9,7 @@ import { damp } from './hero3d-math.js';
 const H = 7;              // world units spanning the section's height
 const SCALE = 0.0125;     // ~1.8 units tall, about a quarter of the box
 const FACE = 0.35;        // when walking sideways, turn this much toward the viewer
+const MID = 0.9;          // pitch pivot height (about his waist)
 
 export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
   if (!section || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -52,7 +53,9 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
     // ---- character + clips ----
     const man = await loadCharacterModel(modelUrl, texture);
     man.scale.setScalar(SCALE);
-    const rig = new THREE.Group(); rig.add(man); rig.visible = false; scene.add(rig);
+    // rig: position + pitch (pivot at mid-body so he tilts like a flyer, not like a falling post)
+    const rig = new THREE.Group(), yawG = new THREE.Group();
+    yawG.position.y = -MID; yawG.add(man); rig.add(yawG); rig.visible = false; scene.add(rig);
     const fbx = new FBXLoader();
     const names = Object.keys(files);
     const loaded = await Promise.allSettled(names.map(n => fbx.loadAsync(files[n])));
@@ -88,7 +91,7 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
     shadow.visible = false; scene.add(shadow);
 
     // ---- motion state ----
-    let current = null, gen = 0, facing = 0, faceT = 0;
+    let current = null, gen = 0, facing = 0, faceT = 0, pitch = 0, pitchT = 0;
     const pos = new THREE.Vector3(), vel = { y: 0 };
     let move = null;      // { x, y, speed, resolve }
     let gravity = false;
@@ -109,8 +112,15 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
     const guard = g => { if (g !== gen) throw CANCEL; };
     const wait = (s, g) => new Promise(r => setTimeout(r, s * 1000)).then(() => guard(g));
     const moveTo = (x, y, speed, g) => new Promise(res => { move = { x, y, speed, res }; }).then(() => guard(g));
-    const faceTo = x => { faceT = Math.sign(x - pos.x) * (Math.PI / 2 - FACE); };
-    const faceViewer = () => { faceT = 0; };
+    const faceTo = x => { faceT = Math.sign(x - pos.x) * (Math.PI / 2 - FACE); pitchT = 0; };
+    const faceViewer = () => { faceT = 0; pitchT = 0; };
+    // head-first travel (flying, swimming): side-on toward the target, nose tilted along the path
+    const headFirst = (x, y) => {
+      const dx = x - pos.x || 0.001, dy = y - pos.y, sx = Math.sign(dx);
+      faceT = sx * Math.PI / 2;
+      pitchT = sx * THREE.MathUtils.clamp(Math.atan2(dy, Math.abs(dx)), -0.7, 0.7);
+    };
+    const flyTo = (x, y, speed, g) => { headFirst(x, y); return moveTo(x, y, speed, g); };
     const rnd = (a, b) => a + Math.random() * (b - a);
     const pick = arr => arr[(Math.random() * arr.length) | 0];
     const xIn = () => rnd(-W / 2 + 1, W / 2 - 1);
@@ -124,57 +134,79 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
         while (pos.y > floorY() + (lead[name] || 0)) await wait(0.02, g);
         gravity = false; vel.y = 0; pos.y = floorY();
         faceViewer(); await play(name, 0.15); guard(g);
-        if (flat) { await play('fallenIdle'); guard(g); await wait(1.2, g); await play('standUp'); guard(g); }
+        if (flat) {
+          await play('fallenIdle'); guard(g); await wait(1.2, g); await play('standUp'); guard(g);
+          if (has('injuredWalk')) { const x = THREE.MathUtils.clamp(pos.x + rnd(-1.5, 1.5), -W / 2 + 1, W / 2 - 1); faceTo(x); play('injuredWalk'); await moveTo(x, floorY(), 0.6, g); }
+        }
       } else {
         while (pos.y > floorY()) await wait(0.02, g);
         gravity = false; vel.y = 0; pos.y = floorY();
       }
     }
 
-    const activities = [
-      [3, ['walking'], async g => { faceTo(pos.x); const x = farX(); faceTo(x); play('walking'); await moveTo(x, floorY(), 1.1, g); }],
-      [2, ['running'], async g => { const x = farX(); faceTo(x); play('running'); await moveTo(x, floorY(), 3.2, g); }],
-      [1, ['injuredWalk'], async g => { const x = farX(); faceTo(x); play('injuredWalk'); await moveTo(x, floorY(), 0.6, g); }],
-      [2, ['jump'], async g => { faceViewer(); await play('jump'); }],
-      [1, ['jumpingJacks'], async g => { faceViewer(); play('jumpingJacks'); await wait(rnd(2.5, 4), g); }],
-      [2, ['greeting'], async g => { faceViewer(); await play('greeting'); }],
-      [1, ['pose'], async g => { faceViewer(); play('pose', 0.25); await wait(1.6, g); }],
-      [1, ['trip', 'fallenIdle', 'standUp'], async g => {
-        const x = farX(); faceTo(x); play('walking'); await moveTo((pos.x + x) / 2, floorY(), 1.1, g);
-        await play('trip'); await play('fallenIdle'); await wait(1, g); await play('standUp');
+    const idle = async (g, t = rnd(0.8, 1.6)) => { if (has('idle')) { faceViewer(); play('idle'); await wait(t, g); } };
+    const takeOff = async g => { // a hop into the air, flying starts at the top of it
+      if (has('jump')) { play('jump', 0.2); await wait(0.45, g); }
+    };
+    const descend = async g => { // float down and land
+      faceViewer(); play(has('floating') ? 'floating' : 'treading');
+      await moveTo(pos.x, floorY() + 1.2, 0.9, g);
+      gravity = true; await land(g);
+    };
+    const sequences = [
+      // stroll somewhere and look around
+      [3, ['walking'], async g => { const x = farX(); faceTo(x); play('walking'); await moveTo(x, floorY(), 1.1, g); await idle(g); }],
+      // sprint across; going too fast at the end sometimes makes him trip, then he gets up
+      [2, ['running'], async g => {
+        const x = farX(); faceTo(x); play('running'); await moveTo(x, floorY(), 3.2, g);
+        if (has('trip') && has('standUp') && Math.random() < 0.35) {
+          await play('trip', 0.15); if (has('fallenIdle')) { play('fallenIdle'); await wait(0.8, g); }
+          await play('standUp');
+        }
+        await idle(g);
       }],
-      [2, ['flying', 'floating'], async g => {
-        const x = farX(); faceTo(x); play('flying'); await moveTo(x, airY(), 2.4, g);
-        await moveTo(farX(), airY(), 2.4, g);
-        play('floating'); faceViewer(); await moveTo(pos.x, floorY() + 1.2, 0.9, g);
-        gravity = true; await land(g);
+      // workout, then a victory pose to the viewer
+      [1, ['jumpingJacks'], async g => {
+        faceViewer(); play('jumpingJacks'); await wait(rnd(2.5, 3.5), g);
+        if (has('pose')) { play('pose', 0.3); await wait(1.4, g); }
       }],
-      [2, ['swimming', 'treading'], async g => {
-        faceViewer(); play('treading'); await moveTo(pos.x, airY(), 0.9, g);
-        const x = farX(); faceTo(x); play('swimming'); await moveTo(x, pos.y + rnd(-0.4, 0.4), 1.2, g);
-        faceViewer(); play('treading'); await wait(rnd(1.5, 2.5), g);
-        play(has('floating') ? 'floating' : 'treading'); await moveTo(pos.x, floorY() + 1.2, 0.8, g);
-        gravity = true; await land(g);
+      // jump, fly up and across, float back down
+      [2, ['flying'], async g => {
+        const x1 = farX(), y1 = airY();
+        faceTo(x1); await wait(0.3, g); await takeOff(g);
+        play('flying', 0.3); await flyTo(x1, y1, 2.4, g);
+        const x2 = farX(); await flyTo(x2, airY(), 2.4, g);
+        await descend(g);
       }],
-      [1, ['floating'], async g => {
-        faceViewer(); play('floating'); await moveTo(pos.x + rnd(-1, 1), floorY() + rnd(1, 2), 0.5, g);
-        await wait(1.5, g); gravity = true; await land(g);
+      // fly up into the "water", tread, swim across, tread, float down
+      [2, ['flying', 'swimming', 'treading'], async g => {
+        const y = airY(), x1 = THREE.MathUtils.clamp(pos.x + rnd(-1.5, 1.5), -W / 2 + 1, W / 2 - 1);
+        faceTo(x1); await wait(0.3, g); await takeOff(g);
+        play('flying', 0.3); await flyTo(x1, y, 2.2, g);
+        faceViewer(); play('treading', 0.5); await wait(rnd(1.2, 2), g);
+        const x2 = farX(); play('swimming', 0.5); await flyTo(x2, y + rnd(-0.3, 0.3), 1.2, g);
+        faceViewer(); play('treading', 0.5); await wait(rnd(1.2, 2), g);
+        await descend(g);
       }],
+      // say hi now and then
+      [1, ['greeting'], async g => { faceViewer(); await play('greeting'); }],
     ].filter(([, need]) => need.every(has));
 
     async function roam(g) {
-      // fall in from above the top edge
-      pos.set(rnd(-W * 0.3, W * 0.3), H / 2 + 1.5, 0); vel.y = 0; move = null; facing = faceT = 0;
+      // fall in from above the top edge, land, then say hi
+      pos.set(rnd(-W * 0.3, W * 0.3), H / 2 + 1.5, 0); vel.y = 0; move = null; facing = faceT = pitch = pitchT = 0;
       rig.visible = true; shadow.visible = true;
       play(has('falling') ? 'falling' : 'pose', 0); gravity = true;
       await land(g);
+      if (has('greeting')) { faceViewer(); await play('greeting'); }
+      let last = null;
       for (;;) {
-        if (has('idle')) { faceViewer(); play('idle'); await wait(rnd(0.8, 2), g); }
-        const total = activities.reduce((s, [w]) => s + w, 0);
-        let r = Math.random() * total, act = activities[0];
-        for (const a of activities) { if ((r -= a[0]) <= 0) { act = a; break; } }
-        if (!act) { await wait(2, g); continue; }
-        await act[2](g);
+        await idle(g);
+        const pool = sequences.filter(q => q !== last);           // never the same thing twice in a row
+        if (!pool.length) { await wait(2, g); continue; }
+        let r = Math.random() * pool.reduce((t, [w]) => t + w, 0), q = pool[0];
+        for (const c of pool) { if ((r -= c[0]) <= 0) { q = c; break; } }
+        last = q; await q[2](g);
       }
     }
     const begin = () => { const g = ++gen; roam(g).catch(e => { if (e !== CANCEL) console.info('reviews actor:', e); }); };
@@ -195,8 +227,8 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
         if (len <= step) { pos.x = move.x; pos.y = move.y; const r = move.res; move = null; r(); }
         else { pos.x += (d.x / len) * step; pos.y += (d.y / len) * step; }
       }
-      facing = damp(facing, faceT, 6, dt);
-      rig.position.copy(pos); rig.rotation.y = facing;
+      facing = damp(facing, faceT, 6, dt); pitch = damp(pitch, pitchT, 4, dt);
+      rig.position.set(pos.x, pos.y + MID, pos.z); rig.rotation.z = pitch; yawG.rotation.y = facing;
       const alt = Math.max(0, pos.y - floorY());
       shadow.position.set(pos.x, floorY() + 0.01, 0); shadow.rotation.x = -Math.PI / 2 + 0.25;
       shadow.material.opacity = Math.max(0.08, 1 - alt / 3); shadow.scale.setScalar(Math.max(0.5, 1 - alt / 6));
