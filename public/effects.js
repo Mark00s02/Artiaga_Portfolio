@@ -133,6 +133,36 @@ function initWorksObserver() {
   obs.observe(grid, { childList: true });
 }
 
+// ---- WORKS PARALLAX: layers drift at their data-speed relative to the viewport centre ----
+function initWorksParallax() {
+  const page = document.getElementById('page-works');
+  if (!page || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  // featured rows wipe in once when they reach the viewport
+  const reveal = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); reveal.unobserve(e.target); }
+  }), { threshold: 0.2 });
+  const featured = document.getElementById('worksFeatured');
+  if (featured) new MutationObserver(() => featured.querySelectorAll('.feature:not(.in)').forEach(f => reveal.observe(f)))
+    .observe(featured, { childList: true });
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    if (!page.classList.contains('active')) return;
+    const vh = innerHeight, k = innerWidth < 700 ? 0.5 : 1; // gentler on phones
+    page.querySelectorAll('[data-speed]').forEach(el => {
+      const r = el.parentElement.getBoundingClientRect(); // parent is unaffected by el's own transform
+      const off = r.top + r.height / 2 - vh / 2;
+      if (Math.abs(off) > vh * 1.5) return;
+      el.style.transform = `translate3d(0, ${(off * el.dataset.speed * k).toFixed(1)}px, 0)`;
+    });
+  };
+  const queue = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  addEventListener('scroll', queue, { passive: true });
+  addEventListener('resize', queue);
+  // re-run when the page is shown or the grid is re-rendered (filtering)
+  new MutationObserver(queue).observe(page, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+}
+
 // ---- STAT GLOW ON HOVER ----
 function initStatGlow() {
   document.querySelectorAll('.stat-item').forEach(item => {
@@ -195,6 +225,7 @@ function initAllEffects() {
   initNavChroma();
   initStatGlow();
   initWorksObserver();
+  initWorksParallax();
   initMarqueeLift();
   initImageScan();
   initPageTransition();

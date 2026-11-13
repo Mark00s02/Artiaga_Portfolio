@@ -38,18 +38,16 @@ export async function loadActor({ scene, files, texture, chair, keyboard, reduce
   const hips = bone('Hips'), hands = [bone('LeftHand'), bone('RightHand')];
   const mixer = new THREE.AnimationMixer(man);
   const local = b => man.worldToLocal(b.getWorldPosition(new THREE.Vector3()));
+  // measurements use their own mixer so a clip arriving mid-animation doesn't disturb the one playing
+  const sampler = new THREE.AnimationMixer(man);
   const sample = (clip, t) => {
-    const a = mixer.clipAction(clip); a.reset().play(); a.time = t; mixer.update(0);
+    const a = sampler.clipAction(clip); a.reset().play(); a.time = t; sampler.update(0);
     man.updateMatrixWorld(true);
     const r = { hips: local(hips), hands: hands.map(local) };
     a.stop(); return r;
   };
 
-  // ---- clips ----
   const clips = { typing: man.animations[0] };
-  const extra = Object.entries(files).filter(([k]) => k !== 'typing');
-  (await Promise.allSettled(extra.map(([, url]) => fbx.loadAsync(url))))
-    .forEach((r, i) => { if (r.status === 'fulfilled' && r.value.animations[0]) clips[extra[i][0]] = r.value.animations[0]; });
 
   // ---- fit: hands on the keyboard, chair under the hips ----
   rig.updateMatrixWorld(true); // apply the 180° turn before measuring in world space
@@ -65,19 +63,28 @@ export async function loadActor({ scene, files, texture, chair, keyboard, reduce
 
   // per-clip hip offset (model units) so every seated clip sits where Typing sits,
   // and Stand-to-Sit starts exactly where Sit-to-Stand ended
-  const offsets = {};
-  for (const [name, clip] of Object.entries(clips)) {
+  const offsets = {}, actions = {};
+  function addClip(name, clip) {
+    clips[name] = clip;
     const start = sample(clip, 0).hips;
     if (name === 'sitToStand') offsets[name] = new THREE.Vector3();
     else if (name === 'standToSit' && clips.sitToStand) offsets[name] = sample(clips.sitToStand, clips.sitToStand.duration - 0.01).hips.sub(start).setX(0);
     else offsets[name] = type0.hips.clone().sub(start).setX(0);
-  }
-
-  const actions = {};
-  for (const [name, clip] of Object.entries(clips)) {
     const a = mixer.clipAction(clip);
     if (name !== 'typing') { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; }
     actions[name] = a;
+  }
+  addClip('typing', clips.typing);
+  // The other clips load one at a time in the background: downloading them all at once ties up the
+  // browser's few connections per server and stalls the page's own requests (the Works list waited ~19 s).
+  const order = ['cheer', ...Object.keys(files).filter(k => k !== 'typing' && k !== 'cheer')];
+  const loaded = {};
+  let chain = Promise.resolve();
+  for (const name of order) {
+    loaded[name] = chain = chain
+      .then(() => fbx.loadAsync(files[name]))
+      .then(f => { if (f.animations[0]) addClip(name, f.animations[0]); })
+      .catch(() => {}); // a missing clip just isn't used
   }
 
   // ---- director ----
@@ -118,9 +125,10 @@ export async function loadActor({ scene, files, texture, chair, keyboard, reduce
   async function direct() {
     play('typing', 0);
     await wait(2.5);
+    await Promise.race([loaded.cheer, wait(6)]); // the greeting clip loads first
     if (!reduced && actions.cheer) await greet();
-    const seated = ['seatedIdle', 'sittingIdle', 'yell', 'fist', 'cheer'].filter(n => actions[n]);
     for (;;) {
+      const seated = ['seatedIdle', 'sittingIdle', 'yell', 'fist', 'cheer'].filter(n => actions[n]);
       play('typing');
       await wait(10 + Math.random() * 6);
       const r = Math.random();

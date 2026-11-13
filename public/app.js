@@ -222,11 +222,29 @@ function renderWorksGrid(works) {
   const grid = document.getElementById('worksGrid');
   if (!grid) return;
   const fallback = 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800';
-  grid.innerHTML = works.map(w => {
-    const tags = (w.tags || '').split(',').map(t => `<span>${t.trim()}</span>`).join('');
+  const tagsOf = w => (w.tags || '').split(',').map(t => `<span>${t.trim()}</span>`).join('');
+  // top 3 (in list order) get the editorial parallax rows; the rest go in the grid below
+  const featured = document.getElementById('worksFeatured');
+  if (featured) featured.innerHTML = works.slice(0, 3).map((w, i) => `
+      <article class="feature${i % 2 ? ' flip' : ''}" onclick="openModal('${w._id}')">
+        <span class="feature-num" data-speed="0.22" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
+        <div class="feature-frame">
+          <div class="feature-img" data-speed="-0.14" style="background-image:url('${w.img || fallback}')"></div>
+        </div>
+        <div class="feature-text" data-speed="-0.06">
+          <span class="work-cat">${w.cat}</span>
+          <h3 class="feature-title">${w.title}</h3>
+          <div class="work-tech">${tagsOf(w)}</div>
+          <span class="work-view">// view_project →</span>
+        </div>
+      </article>`).join('');
+  const rest = featured ? works.slice(3) : works;
+  grid.innerHTML = (featured && rest.length ? '<span class="section-tag works-more-tag">// more_projects</span>' : '') + rest.map(w => {
+    const tags = tagsOf(w);
     return `
       <div class="work-card" onclick="openModal('${w._id}')">
-        <div class="work-img${w.imgOrientation === 'portrait' ? ' portrait' : ''}" style="background-image:url('${w.img || fallback}')">
+        <div class="work-img${w.imgOrientation === 'portrait' ? ' portrait' : ''}">
+          <div class="work-img-bg" data-speed="-0.08" style="background-image:url('${w.img || fallback}')"></div>
           <div class="work-overlay">
             <span class="work-cat">${w.cat}</span>
             <h3>${w.title}</h3>

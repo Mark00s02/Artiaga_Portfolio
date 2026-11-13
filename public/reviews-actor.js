@@ -57,29 +57,41 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
     const rig = new THREE.Group(), yawG = new THREE.Group();
     yawG.position.y = -MID; yawG.add(man); rig.add(yawG); rig.visible = false; scene.add(rig);
     const fbx = new FBXLoader();
-    const names = Object.keys(files);
-    const loaded = await Promise.allSettled(names.map(n => fbx.loadAsync(files[n])));
-    const clips = {};
-    loaded.forEach((r, i) => { if (r.status === 'fulfilled' && r.value.animations[0]) clips[names[i]] = inPlace(r.value.animations[0]); });
-    if (clips.stand) clips.standStill = clips.stand.clone(); // 'Stand' is a get-up move; its last frame is our still pose
-    const has = n => !!clips[n];
-
+    const clips = {}, actions = {}, lead = {};
+    const has = n => !!actions[n];
     const mixer = new THREE.AnimationMixer(man);
+    const sampler = new THREE.AnimationMixer(man); // measurements don't disturb what's playing
     const hips = (() => { let b = null; man.traverse(o => { if (!b && o.isBone && o.name.endsWith('Hips')) b = o; }); return b; })();
     const hipsY = clip => { // hip height (world units) at the clip's first frame
-      const a = mixer.clipAction(clip); a.reset().play(); a.time = 0; mixer.update(0);
+      const a = sampler.clipAction(clip); a.reset().play(); a.time = 0; sampler.update(0);
       const y = man.worldToLocal(hips.getWorldPosition(new THREE.Vector3())).y * SCALE; a.stop(); return y;
     };
-    const standHips = has('walking') ? hipsY(clips.walking) : 0.95; // upright hip height
-    // landing clips start in the air: begin them this far above the floor
-    const lead = Object.fromEntries(['land', 'flatImpact'].filter(has).map(n => [n, Math.max(0, hipsY(clips[n]) - standHips)]));
-
-    const actions = {};
-    for (const [n, c] of Object.entries(clips)) {
+    let standHips = 0.95; // upright hip height, measured from Walking when it arrives
+    const addAction = (n, c) => {
       const a = mixer.clipAction(c);
       if (ONCE.has(n)) { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; }
       actions[n] = a;
+    };
+    function addClip(n, clip) {
+      clips[n] = inPlace(clip);
+      if (n === 'walking') standHips = hipsY(clips[n]);
+      // landing clips start in the air: begin them this far above the floor
+      if (n === 'land' || n === 'flatImpact') lead[n] = Math.max(0, hipsY(clips[n]) - standHips);
+      addAction(n, clips[n]);
+      if (n === 'stand') addAction('standStill', clips.stand.clone()); // 'Stand' is a get-up move; its last frame is our still pose
     }
+    // One clip at a time (parallel downloads stall the page's own requests). Entrance clips first.
+    const first = ['falling', 'walking', 'land', 'stand', 'greeting'];
+    const order = [...first, ...Object.keys(files).filter(n => !first.includes(n))].filter(n => files[n]);
+    const loaded = {};
+    let chain = Promise.resolve();
+    for (const n of order) {
+      loaded[n] = chain = chain
+        .then(() => fbx.loadAsync(files[n]))
+        .then(f => { if (f.animations[0]) addClip(n, f.animations[0]); })
+        .catch(() => {}); // a missing clip just isn't used
+    }
+    const entranceReady = loaded.greeting || chain;
 
     // soft contact shadow
     const shadowTex = (() => {
@@ -191,10 +203,11 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
       }],
       // say hi now and then
       [1, ['greeting'], async g => { faceViewer(); await play('greeting'); }],
-    ].filter(([, need]) => need.every(has));
+    ];
 
     async function roam(g) {
       // fall in from above the top edge, land, then say hi
+      await entranceReady; guard(g);
       pos.set(rnd(-W * 0.3, W * 0.3), H / 2 + 1.5, 0); vel.y = 0; move = null; facing = faceT = pitch = pitchT = 0;
       rig.visible = true; shadow.visible = true;
       play(has('falling') ? 'falling' : 'pose', 0); gravity = true;
@@ -203,7 +216,7 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
       let last = null;
       for (;;) {
         await idle(g);
-        const pool = sequences.filter(q => q !== last);           // never the same thing twice in a row
+        const pool = sequences.filter(q => q !== last && q[1].every(has)); // only loaded ones; never the same twice in a row
         if (!pool.length) { await wait(2, g); continue; }
         let r = Math.random() * pool.reduce((t, [w]) => t + w, 0), q = pool[0];
         for (const c of pool) { if ((r -= c[0]) <= 0) { q = c; break; } }
