@@ -1,0 +1,88 @@
+{
+  "update_existing": [
+    {
+      "_id": "BACQ3pHmixO7hQ9g",
+      "title": "Zuitt 2048",
+      "img": "assets/works/zuitt-2048/1-board.jpg",
+      "gallery": [],
+      "imgOrientation": "landscape",
+      "featured": true
+    },
+    {
+      "_id": "5a722c54-5f3f-4871-912d-abf8b6b7f90b",
+      "title": "Facial Recognition System",
+      "img": "assets/works/facial-recognition/1-live.jpg",
+      "gallery": [
+        "assets/works/facial-recognition/2-manage.jpg",
+        "assets/works/facial-recognition/3-settings.jpg"
+      ],
+      "imgOrientation": "landscape",
+      "featured": true
+    }
+  ],
+  "add_new": [
+    {
+      "title": "Gait Recognition System",
+      "cat": "Desktop App",
+      "desc": "A Python desktop app that identifies people by the way they walk. MediaPipe tracks body pose landmarks from the webcam, the system turns each walk into gait features, and an SVM classifier learns each person's walking signature. Users are enrolled by recording a few walking samples, the model is trained in one click, and live recognition shows who is walking with a confidence score, backed by an activity log and a user database.",
+      "img": "assets/works/gait-recognition/1-enroll.jpg",
+      "gallery": [
+        "assets/works/gait-recognition/2-recognize.jpg",
+        "assets/works/gait-recognition/3-dashboard.jpg"
+      ],
+      "tags": "Python, Tkinter, OpenCV, MediaPipe, scikit-learn, NumPy, SciPy, SQLite, Computer Vision",
+      "featured": true,
+      "imgOrientation": "landscape"
+    },
+    {
+      "title": "Cosy World 3D",
+      "cat": "Game",
+      "desc": "A 3D browser sandbox game built with Three.js. Pick a side: on the Village side you build, farm, fish and protect the villagers; on the Wild side you summon undead and command wild beasts to raze villages; Build Mode is a free sandbox with unlimited resources. Features a day/night cycle, NPC villagers and animals, an inventory and hotbar, crafting resources, and saves to the browser.\n\nPlay it here:\n\nhttps://mark00s02.github.io/CWorld/",
+      "img": "assets/works/cosy-world/1-village.jpg",
+      "gallery": [
+        "assets/works/cosy-world/2-menu.jpg",
+        "assets/works/cosy-world/3-wild.jpg"
+      ],
+      "tags": "JavaScript, Three.js, HTML, CSS",
+      "featured": true,
+      "imgOrientation": "landscape"
+    },
+    {
+      "title": "Galaxy Strike",
+      "cat": "Game",
+      "desc": "A mobile space shooter built with Flutter and the Flame game engine. Drag to move your ship while it auto-fires, collect power-ups, chain kills for a score multiplier and face a boss every fifth wave. Includes sound effects, settings and a saved high score.",
+      "img": "assets/works/galaxy-strike/1-menu.jpg",
+      "gallery": [
+        "assets/works/galaxy-strike/2-gameplay.jpg"
+      ],
+      "tags": "Flutter, Dart, Flame, Mobile Game",
+      "featured": true,
+      "imgOrientation": "portrait"
+    },
+    {
+      "title": "LearnSpace",
+      "cat": "Web System",
+      "desc": "An installable, offline-first learning tool (PWA) for auditors. Keeps tagged notes with quick capture and search, reminders with browser notifications, learning topics with progress tracking, audit checklists and a non-conformance log, plus an auditor tip of the day. Installs like a desktop or Android app and stores everything on the device.",
+      "img": "assets/works/learnspace/1-dashboard.jpg",
+      "gallery": [
+        "assets/works/learnspace/2-learning.jpg",
+        "assets/works/learnspace/3-notes.jpg"
+      ],
+      "tags": "HTML, CSS, JavaScript, PWA, Service Worker, Local Storage",
+      "featured": true,
+      "imgOrientation": "landscape"
+    },
+    {
+      "title": "Desktop-Style Portfolio",
+      "cat": "Web System",
+      "desc": "My earlier portfolio, styled as a desktop operating system: a boot screen, draggable windows that minimise to a taskbar with a live clock, a start menu with shutdown, and About, Projects, Resume and Contact apps.\n\nSee it here:\n\nhttps://mark00s02.github.io/Desktop-Style-Portfolio/",
+      "img": "assets/works/desktop-portfolio/1-desktop.jpg",
+      "gallery": [
+        "assets/works/desktop-portfolio/2-projects.jpg"
+      ],
+      "tags": "HTML, CSS, JavaScript",
+      "featured": false,
+      "imgOrientation": "landscape"
+    }
+  ]
+}
