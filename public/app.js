@@ -7,6 +7,10 @@ let carouselIndex = 0;
 let carouselItems = [];
 let selectedStars = 5;
 
+// Visitor-submitted text must never become markup.
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const stars = n => { const k = Math.min(5, Math.max(0, Math.round(+n) || 0)); return '★'.repeat(k) + '☆'.repeat(5 - k); };
+
 // ---- INIT ----
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('yr').textContent = new Date().getFullYear();
@@ -17,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ---- NAVIGATION ----
 function navigate(page) {
+  // never flash the admin shell to someone who hasn't signed in (renderAdmin re-checks with the server)
+  if (page === 'admin' && !sessionStorage.getItem('admin_auth')) page = 'admin-login';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
 
@@ -161,9 +167,9 @@ async function renderReviewsMarquee() {
     const reviews = (await DB.getReviews()).slice(0, 8);
     const cards = reviews.map(r => `
       <div class="marquee-card" onclick="navigate('reviews')">
-        <div class="marquee-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
-        <p>"${r.text}"</p>
-        <div class="marquee-author"><strong>${r.name}</strong><span>${r.role}</span></div>
+        <div class="marquee-stars">${stars(r.rating)}</div>
+        <p>"${esc(r.text)}"</p>
+        <div class="marquee-author"><strong>${esc(r.name)}</strong><span>${esc(r.role)}</span></div>
       </div>`).join('');
     marquee.innerHTML = cards + cards;
   } catch {}
@@ -351,12 +357,12 @@ async function renderReviews() {
     if (!grid) return;
     grid.innerHTML = reviews.map(r => `
       <div class="review-card">
-        <div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
-        <p class="review-text">"${r.text}"</p>
+        <div class="review-stars">${stars(r.rating)}</div>
+        <p class="review-text">"${esc(r.text)}"</p>
         <div class="review-author">
-          <strong>${r.name}</strong>
-          <span>${r.role}</span>
-          <small>${r.date}</small>
+          <strong>${esc(r.name)}</strong>
+          <span>${esc(r.role)}</span>
+          <small>${esc(r.date)}</small>
         </div>
       </div>`).join('');
   } catch (e) { console.error('renderReviews:', e); }
@@ -405,26 +411,38 @@ async function submitReview() {
 }
 
 // ---- ADMIN ----
-function adminLogin() {
+// The server checks the credentials and sets an HttpOnly session cookie; the flag below only drives the UI.
+async function adminLogin() {
   const user = document.getElementById('adminUser').value;
   const pass = document.getElementById('adminPass').value;
   const err  = document.getElementById('loginErr');
-  if (user === 'User' && pass === 'Pass123') {
-    sessionStorage.setItem('admin_auth', '1');
-    navigate('admin');
-  } else {
-    err.textContent = '// error: invalid credentials';
-    err.className = 'form-msg error';
-  }
+  err.textContent = '// verifying…'; err.className = 'form-msg';
+  try {
+    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: user, password: pass }) });
+    if (res.ok) {
+      document.getElementById('adminPass').value = '';
+      sessionStorage.setItem('admin_auth', '1');
+      err.textContent = '';
+      navigate('admin');
+      return;
+    }
+    err.textContent = res.status === 503 ? '// error: admin login is not configured on the server' : '// error: invalid credentials';
+  } catch { err.textContent = '// error: could not reach the server'; }
+  err.className = 'form-msg error';
 }
 
-function adminLogout() {
+async function adminLogout() {
   sessionStorage.removeItem('admin_auth');
+  await fetch('/api/logout', { method: 'POST' }).catch(() => {});
   navigate('home');
 }
 
+let _adminCheck = 0;
 async function renderAdmin() {
-  if (!sessionStorage.getItem('admin_auth')) { navigate('admin-login'); return; }
+  const mine = ++_adminCheck; // a slow, older check must not override a newer one (e.g. a fresh login)
+  const { admin } = await fetch('/api/session').then(r => r.json()).catch(() => ({ admin: false }));
+  if (mine !== _adminCheck) return;
+  if (!admin) { sessionStorage.removeItem('admin_auth'); navigate('admin-login'); return; }
   try {
     const works   = await DB.getWorks();
     const reviews = await DB.getAllReviews();
@@ -656,15 +674,15 @@ async function renderAdminReviews() {
   list.innerHTML = reviews.map(r => `
     <div class="admin-item">
       <div class="admin-item-info">
-        <strong>${r.name}</strong> — ${'★'.repeat(r.rating)}
-        <p>"${r.text.substring(0,100)}..."</p>
-        <span>${r.role} · ${r.date} · ${r.approved
+        <strong>${esc(r.name)}</strong> — ${stars(r.rating)}
+        <p>"${esc(String(r.text || '').substring(0,100))}..."</p>
+        <span>${esc(r.role)} · ${esc(r.date)} · ${r.approved
           ? '<span style="color:var(--green)">approved</span>'
           : '<span style="color:#fb923c">pending</span>'}</span>
       </div>
       <div style="display:flex;gap:.4rem;flex-shrink:0">
-        ${!r.approved ? `<button onclick="approveReview('${r._id}')" class="btn-approve">approve</button>` : ''}
-        <button onclick="deleteReview('${r._id}')" class="btn-delete">rm</button>
+        ${!r.approved ? `<button onclick="approveReview('${esc(r._id)}')" class="btn-approve">approve</button>` : ''}
+        <button onclick="deleteReview('${esc(r._id)}')" class="btn-delete">rm</button>
       </div>
     </div>`).join('');
 }

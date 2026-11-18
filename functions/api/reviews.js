@@ -1,4 +1,5 @@
 import { DEFAULT_REVIEWS } from './_seed.js';
+import { cleanReview } from './_auth.js';
 
 async function getReviews(env) {
   const data = await env.PORTFOLIO_KV.get('reviews', 'json');
@@ -23,9 +24,10 @@ export async function onRequestGet({ env }) {
 export async function onRequestPost({ request, env }) {
   try {
     const reviews = await getReviews(env);
-    const body = await request.json();
+    const clean = cleanReview(await request.json().catch(() => ({})));
+    if (!clean) return Response.json({ error: 'Name and review text are required.' }, { status: 400 });
     const review = {
-      ...body,
+      ...clean,
       _id: crypto.randomUUID(),
       date: new Date().toISOString().split('T')[0],
       approved: false,

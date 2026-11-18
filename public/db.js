@@ -3,12 +3,21 @@
 // All data is now fetched from / saved to the Express server
 // ============================================================
 
+// A 401 means the admin session expired or was never valid: drop back to the login screen.
+function check(res) {
+  if (res.status === 401 && sessionStorage.getItem('admin_auth')) {
+    sessionStorage.removeItem('admin_auth');
+    if (typeof navigate === 'function') navigate('admin-login');
+  }
+  if (!res.ok) throw new Error('API error: ' + res.status);
+}
+
 const API = {
   base: '', // same origin — server serves both frontend and API
 
   async get(path) {
     const res = await fetch(this.base + path);
-    if (!res.ok) throw new Error('API error: ' + res.status);
+    check(res);
     return res.json();
   },
 
@@ -18,13 +27,13 @@ const API = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error('API error: ' + res.status);
+    check(res);
     return res.json();
   },
 
   async patch(path) {
     const res = await fetch(this.base + path, { method: 'PATCH' });
-    if (!res.ok) throw new Error('API error: ' + res.status);
+    check(res);
     return res.json();
   },
 
@@ -34,13 +43,13 @@ const API = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error('API error: ' + res.status);
+    check(res);
     return res.json();
   },
 
   async del(path) {
     const res = await fetch(this.base + path, { method: 'DELETE' });
-    if (!res.ok) throw new Error('API error: ' + res.status);
+    check(res);
     return res.json();
   },
 };

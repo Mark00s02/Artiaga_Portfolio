@@ -16,6 +16,31 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 app.use(cors());
 app.use(express.json());
+
+// ---- Admin auth (same rules and code as the Cloudflare functions) ----
+// Set ADMIN_USER and ADMIN_PASSWORD in .env; without them admin actions are refused.
+const auth = require('./functions/api/_auth.js');
+const isLocal = req => ['localhost', '127.0.0.1', '::1'].includes(req.hostname);
+const hasSession = req => auth.verifySession(auth.sessionSecret(process.env), auth.readCookie(req.headers.cookie, auth.SESSION_COOKIE));
+app.use('/api', async (req, res, next) => {
+  if (!auth.requiresAdmin(req.method, '/api' + req.path)) return next();
+  if (!process.env.ADMIN_USER || !process.env.ADMIN_PASSWORD) return res.status(503).json({ error: 'Admin login is not configured (set ADMIN_USER and ADMIN_PASSWORD in .env).' });
+  if (await hasSession(req)) return next();
+  res.status(401).json({ error: 'Not signed in.' });
+});
+app.post('/api/login', async (req, res) => {
+  if (!process.env.ADMIN_USER || !process.env.ADMIN_PASSWORD) return res.status(503).json({ error: 'Admin login is not configured (set ADMIN_USER and ADMIN_PASSWORD in .env).' });
+  const { username = '', password = '' } = req.body || {};
+  if (!await auth.credentialsMatch(String(username), String(password), process.env.ADMIN_USER, process.env.ADMIN_PASSWORD)) {
+    await new Promise(r => setTimeout(r, 800));
+    return res.status(401).json({ error: 'Invalid credentials.' });
+  }
+  const token = await auth.createSession(auth.sessionSecret(process.env));
+  res.set('Set-Cookie', auth.sessionCookie(token, { secure: !isLocal(req) })).json({ ok: true }); // plain http on localhost
+});
+app.post('/api/logout', (req, res) => res.set('Set-Cookie', auth.sessionCookie('', { maxAgeSec: 0, secure: !isLocal(req) })).json({ ok: true }));
+app.get('/api/session', async (req, res) => res.json({ admin: !!process.env.ADMIN_PASSWORD && await hasSession(req) }));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const db = {
@@ -114,7 +139,9 @@ app.get('/api/reviews/all', async (req, res) => {
 });
 app.post('/api/reviews', async (req, res) => {
   try {
-    const review = { ...req.body, date: new Date().toISOString().split('T')[0], approved: false, createdAt: Date.now() };
+    const clean = auth.cleanReview(req.body);
+    if (!clean) return res.status(400).json({ error: 'Name and review text are required.' });
+    const review = { ...clean, date: new Date().toISOString().split('T')[0], approved: false, createdAt: Date.now() };
     res.json(await db.reviews.insert(review));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

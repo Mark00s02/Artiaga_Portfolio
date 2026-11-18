@@ -1,6 +1,11 @@
+import { escapeHtml } from './_auth.js';
+
 export async function onRequestPost({ request, env }) {
   try {
-    const { name, email, subject, message } = await request.json();
+    const raw = await request.json();
+    const { name, email, subject, message } = raw;
+    // escaped copies for the HTML email body (visitor input must not become markup in your inbox)
+    const h = { name: escapeHtml(name), email: escapeHtml(email), subject: escapeHtml(subject), message: escapeHtml(message) };
     if (!name || !email || !message) {
       return Response.json({ error: 'Name, email, and message are required.' }, { status: 400 });
     }
@@ -31,14 +36,14 @@ export async function onRequestPost({ request, env }) {
           <div style="font-family:sans-serif;max-width:600px;color:#111">
             <h2 style="color:#3b82f6;margin-bottom:1rem">New Contact via Portfolio</h2>
             <table style="width:100%;border-collapse:collapse;margin-bottom:1.5rem">
-              <tr style="border-bottom:1px solid #eee"><td style="padding:10px;font-weight:bold;width:100px">Name</td><td style="padding:10px">${name}</td></tr>
-              <tr style="border-bottom:1px solid #eee"><td style="padding:10px;font-weight:bold">Email</td><td style="padding:10px"><a href="mailto:${email}" style="color:#3b82f6">${email}</a></td></tr>
-              <tr style="border-bottom:1px solid #eee"><td style="padding:10px;font-weight:bold">Subject</td><td style="padding:10px">${subject || 'Project Inquiry'}</td></tr>
+              <tr style="border-bottom:1px solid #eee"><td style="padding:10px;font-weight:bold;width:100px">Name</td><td style="padding:10px">${h.name}</td></tr>
+              <tr style="border-bottom:1px solid #eee"><td style="padding:10px;font-weight:bold">Email</td><td style="padding:10px"><a href="mailto:${h.email}" style="color:#3b82f6">${h.email}</a></td></tr>
+              <tr style="border-bottom:1px solid #eee"><td style="padding:10px;font-weight:bold">Subject</td><td style="padding:10px">${h.subject || 'Project Inquiry'}</td></tr>
             </table>
             <p style="font-weight:bold;margin-bottom:.5rem">Message:</p>
-            <p style="white-space:pre-wrap;background:#f5f5f5;padding:1rem;border-radius:6px;line-height:1.7">${message}</p>
+            <p style="white-space:pre-wrap;background:#f5f5f5;padding:1rem;border-radius:6px;line-height:1.7">${h.message}</p>
             <hr style="margin:1.5rem 0;border:none;border-top:1px solid #eee">
-            <p style="color:#888;font-size:.85rem">Reply directly to this email to respond to ${name}.</p>
+            <p style="color:#888;font-size:.85rem">Reply directly to this email to respond to ${h.name}.</p>
           </div>
         `,
       }),
