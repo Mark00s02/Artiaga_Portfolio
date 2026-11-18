@@ -364,6 +364,10 @@
           <select id="wOrientation"><option value="landscape">Landscape (wide)</option><option value="portrait">Portrait (tall)</option></select>
           <label>featured (carousel)</label>
           <select id="wFeatured"><option value="true">Yes</option><option value="false">No</option></select>
+          <label>highlight on works page (big parallax rows, in this order)</label>
+          <select id="wHighlight"><option value="0">No</option><option value="1">#1</option><option value="2">#2</option><option value="3">#3</option><option value="4">#4</option><option value="5">#5</option><option value="6">#6</option></select>
+          <label>screenshot gallery (one image URL per line, shown in the project popup)</label>
+          <textarea id="wGallery" rows="3" placeholder="assets/works/my-project/1.jpg"></textarea>
           <button onclick="addWork()" class="btn-primary"><span class="btn-icon">▶</span> Add Project</button>
           <div id="workMsg" class="form-msg"></div>
         </div>
@@ -434,6 +438,7 @@
   <div class="modal-box" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closeModal()">×</button>
     <img id="modalImg" src="" alt="" />
+    <div class="modal-gallery" id="modalGallery"></div>
     <div class="modal-body">
       <div class="modal-top">
         <span class="modal-cat" id="modalCat"></span>

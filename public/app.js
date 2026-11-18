@@ -223,9 +223,12 @@ function renderWorksGrid(works) {
   if (!grid) return;
   const fallback = 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800';
   const tagsOf = w => (w.tags || '').split(',').map(t => `<span>${t.trim()}</span>`).join('');
-  // top 3 (in list order) get the editorial parallax rows; the rest go in the grid below
+  // works picked as highlights in the admin (#1, #2, …) get the editorial parallax rows;
+  // with none picked, the first 3 do. Everything else goes in the grid below.
+  const picked = works.filter(w => +w.highlight > 0).sort((a, b) => a.highlight - b.highlight);
+  const top = picked.length ? picked : works.slice(0, 3);
   const featured = document.getElementById('worksFeatured');
-  if (featured) featured.innerHTML = works.slice(0, 3).map((w, i) => `
+  if (featured) featured.innerHTML = top.map((w, i) => `
       <article class="feature${i % 2 ? ' flip' : ''}" onclick="openModal('${w._id}')">
         <span class="feature-num" data-speed="0.22" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
         <div class="feature-frame">
@@ -238,7 +241,7 @@ function renderWorksGrid(works) {
           <span class="work-view">// view_project →</span>
         </div>
       </article>`).join('');
-  const rest = featured ? works.slice(3) : works;
+  const rest = featured ? works.filter(w => !top.includes(w)) : works;
   grid.innerHTML = (featured && rest.length ? '<span class="section-tag works-more-tag">// more_projects</span>' : '') + rest.map(w => {
     const tags = tagsOf(w);
     return `
@@ -267,6 +270,17 @@ async function openModal(id) {
     const modalImg = document.getElementById('modalImg');
     modalImg.src = work.img || fallback;
     modalImg.className = work.imgOrientation === 'portrait' ? 'portrait' : '';
+    // screenshot gallery: thumbnails swap the big image
+    const shots = (work.gallery || []).length ? [...new Set([work.img, ...work.gallery].filter(Boolean))] : [];
+    const galleryEl = document.getElementById('modalGallery');
+    if (shots.length) modalImg.className = 'shot';
+    if (galleryEl) {
+      galleryEl.innerHTML = shots.map((s, i) => `<button class="modal-thumb${i ? '' : ' active'}" style="background-image:url('${s}')" aria-label="screenshot ${i + 1}"></button>`).join('');
+      galleryEl.querySelectorAll('.modal-thumb').forEach((b, i) => b.onclick = e => {
+        e.stopPropagation(); modalImg.src = shots[i];
+        galleryEl.querySelectorAll('.modal-thumb').forEach(t => t.classList.toggle('active', t === b));
+      });
+    }
     document.getElementById('modalTitle').textContent = work.title;
     document.getElementById('modalCat').textContent   = work.cat;
     document.getElementById('modalDesc').textContent  = work.desc;
@@ -532,6 +546,8 @@ function _workFormValues() {
     img:      document.getElementById('wImg').value.trim(),
     tags:     document.getElementById('wTags').value.trim(),
     featured:        document.getElementById('wFeatured').value === 'true',
+    highlight:       Number(document.getElementById('wHighlight').value) || 0,
+    gallery:         document.getElementById('wGallery').value.split('\n').map(s => s.trim()).filter(Boolean),
     imgOrientation:  document.getElementById('wOrientation').value || 'landscape',
   };
 }
@@ -539,6 +555,8 @@ function _workFormValues() {
 function _resetWorkForm() {
   ['wTitle','wCat','wDesc','wImg','wTags'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('wFeatured').value    = 'true';
+  document.getElementById('wHighlight').value   = '0';
+  document.getElementById('wGallery').value     = '';
   document.getElementById('wOrientation').value = 'landscape';
   const addBtn = document.querySelector('#admin-tab-works .btn-primary');
   addBtn.innerHTML = '<span class="btn-icon">▶</span> Add Project';
@@ -571,6 +589,8 @@ async function editWork(id) {
   document.getElementById('wImg').value      = w.img      || '';
   document.getElementById('wTags').value     = w.tags     || '';
   document.getElementById('wFeatured').value    = w.featured ? 'true' : 'false';
+  document.getElementById('wHighlight').value   = String(w.highlight || 0);
+  document.getElementById('wGallery').value     = (w.gallery || []).join('\n');
   document.getElementById('wOrientation').value = w.imgOrientation || 'landscape';
   const addBtn = document.querySelector('#admin-tab-works .btn-primary');
   addBtn.innerHTML = '<span class="btn-icon">✎</span> Save Changes';
@@ -611,7 +631,7 @@ async function renderAdminWorks() {
       <div class="admin-item-img" style="background-image:url('${w.img}')"></div>
       <div class="admin-item-info">
         <strong>${w.title}</strong>
-        <span>${w.cat}${w.featured ? ' · ⭐ featured' : ''}</span>
+        <span>${w.cat}${w.featured ? ' · ⭐ featured' : ''}${w.highlight ? ` · ◆ highlight #${w.highlight}` : ''}</span>
         <p>${(w.tags||'').substring(0,60)}</p>
       </div>
       <div style="display:flex;gap:.4rem;flex-shrink:0">

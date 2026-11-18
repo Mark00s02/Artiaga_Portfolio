@@ -1140,3 +1140,14 @@ footer {
   .feature-frame { clip-path: none; transition: none; }
   .feature-text { opacity: 1; translate: none; transition: none; }
 }
+
+/* ---- PROJECT POPUP: SCREENSHOT GALLERY ---- */
+#modalImg.shot { height: auto; max-height: 62vh; object-fit: contain; background: var(--bg3); }
+.modal-gallery { display: flex; gap: .5rem; padding: .75rem 1.75rem 0; overflow-x: auto; }
+.modal-gallery:empty { display: none; }
+.modal-thumb {
+  flex: 0 0 auto; width: 96px; aspect-ratio: 16/10; border-radius: 4px; cursor: pointer;
+  background-size: cover; background-position: center top;
+  border: 1px solid var(--border); opacity: .55; transition: opacity var(--transition), border-color var(--transition);
+}
+.modal-thumb:hover, .modal-thumb.active { opacity: 1; border-color: var(--blue); }

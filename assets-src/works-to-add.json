@@ -1,0 +1,57 @@
+[
+  {
+    "title": "PDI Training App",
+    "cat": "System Application",
+    "desc": "A training simulator for convenience-store and fuel-station back-office work. Trainees learn the daily paperwork (fuel readings and deliveries, department sales, lottery, cash recap and banking) inside a faithful replica of the real data-entry system, with automatic calculations and Free, Tutorial and Test modes that score accuracy and speed. It also simulates the tools around the job, such as email, document scanning and the team's workflow spreadsheet, and gives instructors their own accounts to review trainees.",
+    "img": "assets/works/pdi-training/1-home.jpg",
+    "gallery": ["assets/works/pdi-training/2-forms.jpg", "assets/works/pdi-training/3-workflow.jpg", "assets/works/pdi-training/4-outlook.jpg"],
+    "tags": "JavaScript, HTML, CSS, Node.js, Express, SQLite, Google Drive API",
+    "featured": true,
+    "highlight": 1,
+    "imgOrientation": "landscape"
+  },
+  {
+    "title": "Operations Tracker",
+    "cat": "System Application",
+    "desc": "An operations dashboard layered over a team's Google Sheet tracker. A sync service pulls the sheet every 15 minutes into SQLite, and Data Entry, Field Auditor and Staff Accountant teams each get role-based views: completion rates, backlogs by person, monthly trends with PDF export, coaching records and follow-ups, announcements and account management. Read-only for staff, with team leads seeing only their own department.",
+    "img": "assets/works/ops-tracker/1-overview.jpg",
+    "gallery": ["assets/works/ops-tracker/2-reports.jpg", "assets/works/ops-tracker/3-people.jpg", "assets/works/ops-tracker/4-logs.jpg"],
+    "tags": "React, TypeScript, Vite, Tailwind CSS, Express, SQLite, Google Apps Script",
+    "featured": true,
+    "highlight": 2,
+    "imgOrientation": "landscape"
+  },
+  {
+    "title": "Grub Out — Diet & Recipe App",
+    "cat": "Mobile App",
+    "desc": "A diet and recipe mobile app: find recipes from the ingredients you already have, track daily calories with a visual tracker, and follow ready-made diet plans. Designed end to end (onboarding, home, calorie tracker, diet plans, ingredient search, recipe pages and sign-up) and built in React Native, with a Flutter version as well.",
+    "img": "assets/works/grub-out/1-welcome.jpg",
+    "gallery": ["assets/works/grub-out/2-home.jpg", "assets/works/grub-out/3-tracker.jpg", "assets/works/grub-out/4-diet-plans.jpg", "assets/works/grub-out/5-search.jpg", "assets/works/grub-out/6-recipe.jpg", "assets/works/grub-out/7-login.jpg"],
+    "tags": "React Native, Flutter, Dart, UI/UX Design",
+    "featured": true,
+    "highlight": 3,
+    "imgOrientation": "landscape"
+  },
+  {
+    "title": "Fold Converter",
+    "cat": "System Application",
+    "desc": "An offline document and image converter: Word to PDF, PDF merge, split and compress, image conversion including HEIC and AVIF, OCR text extraction, PDF to Excel, and batch folder processing. Everything runs on the user's own machine through a small Flask bridge, so no file ever leaves the device.",
+    "img": "assets/works/fold-converter/1-convert.jpg",
+    "gallery": [],
+    "tags": "JavaScript, HTML, CSS, Python, Flask, pdf-lib, jsPDF",
+    "featured": false,
+    "highlight": 0,
+    "imgOrientation": "landscape"
+  },
+  {
+    "title": "ORS Group Mobile App",
+    "cat": "Mobile App",
+    "desc": "A members-only mobile app for ORS Group, built with Flutter and Firebase: secure sign-in, real-time data through Cloud Firestore, push notifications, image uploads and an events calendar.",
+    "img": "assets/works/ors-app/1-login.jpg",
+    "gallery": [],
+    "tags": "Flutter, Dart, Firebase, Cloud Firestore",
+    "featured": false,
+    "highlight": 0,
+    "imgOrientation": "landscape"
+  }
+]
