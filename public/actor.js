@@ -1,33 +1,32 @@
 // actor.js — the rigged Mixamo character: fits him to the desk and chains the seated clips.
 // Every clip is measured on load (hip and hand positions), so swapping a clip needs no number changes.
 import * as THREE from 'three';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { damp } from './hero3d-math.js';
 
 // ~1.65 m tall: with his hands on the 79 cm desk this puts his hips on the 55 cm chair cushion.
 const SCALE = 0.0115;
 const CHAIR_FROM_HIPS = 0.04; // chair origin sits this far behind the hips (world +Z)
 
-// Loads the skinned character (any "With Skin" Mixamo FBX of him) and fixes what Mixamo breaks.
-export async function loadCharacterModel(url, texture) {
-  const man = await new FBXLoader().loadAsync(url);
-
-  // Mixamo bakes a path from its own server into the FBX, and the OBJ we uploaded had no normals.
-  const skinTex = await new THREE.TextureLoader().loadAsync(texture).catch(() => null);
-  if (skinTex) skinTex.colorSpace = THREE.SRGBColorSpace;
-  man.traverse(o => {
-    if (!o.isMesh) return;
-    o.castShadow = o.receiveShadow = true; o.frustumCulled = false;
-    o.geometry.computeVertexNormals();
-    if (skinTex) o.material = new THREE.MeshStandardMaterial({ map: skinTex, roughness: 0.85, metalness: 0 });
-  });
-
+// character.glb = mesh + Mixamo skeleton + texture + every clip (built by assets-src/character/bundle.html).
+// Downloaded and parsed once; each scene gets its own skinned copy.
+let bundle = null;
+export async function loadCharacterModel(url) {
+  bundle ||= new GLTFLoader().loadAsync(url);
+  const gltf = await bundle;
+  const man = cloneSkinned(gltf.scene);
+  man.animations = gltf.animations;
+  man.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; o.frustumCulled = false; } });
   return man;
 }
 
-export async function loadActor({ scene, files, texture, chair, keyboard, reduced }) {
-  const fbx = new FBXLoader();
-  const man = await loadCharacterModel(files.typing, texture);
+const DESK_CLIPS = ['cheer', 'seatedIdle', 'sittingIdle', 'yell', 'fist', 'sitToStand', 'standToSit'];
+
+export async function loadActor({ scene, model, chair, keyboard, reduced }) {
+  const man = await loadCharacterModel(model);
+  const byName = Object.fromEntries(man.animations.map(c => [c.name, c]));
+  if (!byName.typing) throw new Error('character.glb has no typing clip');
 
   const rig = new THREE.Group();          // world placement: slide back from the desk / swivel
   rig.rotation.y = Math.PI;               // Mixamo faces +Z; the desk is at -Z
@@ -47,7 +46,7 @@ export async function loadActor({ scene, files, texture, chair, keyboard, reduce
     a.stop(); return r;
   };
 
-  const clips = { typing: man.animations[0] };
+  const clips = { typing: byName.typing };
 
   // ---- fit: hands on the keyboard, chair under the hips ----
   rig.updateMatrixWorld(true); // apply the 180° turn before measuring in world space
@@ -75,17 +74,7 @@ export async function loadActor({ scene, files, texture, chair, keyboard, reduce
     actions[name] = a;
   }
   addClip('typing', clips.typing);
-  // The other clips load one at a time in the background: downloading them all at once ties up the
-  // browser's few connections per server and stalls the page's own requests (the Works list waited ~19 s).
-  const order = ['cheer', ...Object.keys(files).filter(k => k !== 'typing' && k !== 'cheer')];
-  const loaded = {};
-  let chain = Promise.resolve();
-  for (const name of order) {
-    loaded[name] = chain = chain
-      .then(() => fbx.loadAsync(files[name]))
-      .then(f => { if (f.animations[0]) addClip(name, f.animations[0]); })
-      .catch(() => {}); // a missing clip just isn't used
-  }
+  for (const n of DESK_CLIPS) if (byName[n]) addClip(n, byName[n]); // missing clips just aren't used
 
   // ---- director ----
   let current = null;
@@ -125,7 +114,6 @@ export async function loadActor({ scene, files, texture, chair, keyboard, reduce
   async function direct() {
     play('typing', 0);
     await wait(2.5);
-    await Promise.race([loaded.cheer, wait(6)]); // the greeting clip loads first
     if (!reduced && actions.cheer) await greet();
     for (;;) {
       const seated = ['seatedIdle', 'sittingIdle', 'yell', 'fist', 'cheer'].filter(n => actions[n]);

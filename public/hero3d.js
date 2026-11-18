@@ -23,28 +23,7 @@ const ASSETS = {
   stationery: M('stationery_supplies'),
   shelf: M('Shelf_01'),
   sideTable: M('WoodenTable_02'),
-  character: {
-    texture: `${A}character/character.png`,
-    clips: { // seated set only; Typing is required, the rest are optional
-      typing: `${A}character/desk/typing.fbx`,
-      seatedIdle: `${A}character/desk/seated-idle.fbx`,
-      sittingIdle: `${A}character/desk/sitting-idle.fbx`,
-      yell: `${A}character/desk/sitting-yell.fbx`,
-      fist: `${A}character/desk/banging-fist.fbx`,
-      cheer: `${A}character/desk/cheering.fbx`,
-      sitToStand: `${A}character/desk/sit-to-stand.fbx`,
-      standToSit: `${A}character/desk/stand-to-sit.fbx`,
-    },
-    reviews: { // roaming the "What they say" section; every clip optional
-      falling: `${A}character/reviews/air/falling.fbx`, flying: `${A}character/reviews/air/flying.fbx`, floating: `${A}character/reviews/air/floating.fbx`,
-      swimming: `${A}character/reviews/air/swimming.fbx`, treading: `${A}character/reviews/air/treading-water.fbx`,
-      stand: `${A}character/reviews/ground/stand.fbx`, walking: `${A}character/reviews/ground/walking.fbx`, running: `${A}character/reviews/ground/running.fbx`,
-      injuredWalk: `${A}character/reviews/ground/injured-walking.fbx`, jump: `${A}character/reviews/ground/jump.fbx`, jumpingJacks: `${A}character/reviews/ground/jumping-jacks.fbx`,
-      greeting: `${A}character/reviews/ground/greeting.fbx`, pose: `${A}character/reviews/ground/dynamic-pose.fbx`, trip: `${A}character/reviews/ground/tripping.fbx`,
-      land: `${A}character/reviews/landing/falling-to-landing.fbx`, flatImpact: `${A}character/reviews/landing/falling-flat-impact.fbx`,
-      fallenIdle: `${A}character/reviews/landing/fallen-idle.fbx`, standUp: `${A}character/reviews/landing/standing-up.fbx`,
-    },
-  },
+  character: { model: `${A}character/character.glb` }, // mesh + skeleton + all clips
 };
 
 const DESK_TOP = 0.79;
@@ -55,7 +34,7 @@ const canvas = document.getElementById('hero3d');
 const stage = document.getElementById('hero3dStage');
 const heading = document.querySelector('.carousel-section .section-header');
 const hero = document.getElementById('heroSection');
-initReviewsActor({ section: document.querySelector('.reviews-preview'), modelUrl: ASSETS.character.clips.typing, texture: ASSETS.character.texture, clips: ASSETS.character.reviews });
+initReviewsActor({ section: document.querySelector('.reviews-preview'), model: ASSETS.character.model });
 
 if (canvas && stage && hero && !canvas.dataset.started) {
   canvas.dataset.started = '1';
@@ -181,7 +160,7 @@ function start() {
   // the rigged Mixamo character if its files are present, otherwise the built-in procedural one
   chairReady.catch(() => null).then(async chair => {
     try {
-      character = await loadActor({ scene, files: ASSETS.character.clips, texture: ASSETS.character.texture, chair, keyboard: kb.position, reduced });
+      character = await loadActor({ scene, model: ASSETS.character.model, chair, keyboard: kb.position, reduced });
     } catch (e) {
       console.info('Mixamo character not loaded, using built-in one:', e?.message || e);
       character = createCharacter({ scene, chair, seat: [0, 0.5, CHAIR_Z - 0.02], keyboard: kb.position, mouse: mouse.position, camera, reduced });

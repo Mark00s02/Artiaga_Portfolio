@@ -2,7 +2,6 @@
 // section, lands, then roams the box: walks, runs, jumps, greets, flies, swims, treads water, floats.
 // Every clip is optional; activities whose clips are missing are simply skipped.
 import * as THREE from 'three';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { loadCharacterModel } from './actor.js';
 import { damp } from './hero3d-math.js';
 
@@ -11,7 +10,11 @@ const SCALE = 0.0125;     // ~1.8 units tall, about a quarter of the box
 const FACE = 0.35;        // when walking sideways, turn this much toward the viewer
 const MID = 0.9;          // pitch pivot height (about his waist)
 
-export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
+// clips this scene uses (walking first: landings are measured against its upright hip height)
+const REVIEW_CLIPS = ['walking', 'falling', 'land', 'flatImpact', 'stand', 'greeting', 'flying', 'floating', 'swimming', 'treading',
+  'running', 'injuredWalk', 'jump', 'jumpingJacks', 'pose', 'trip', 'fallenIdle', 'standUp'];
+
+export function initReviewsActor({ section, model }) {
   if (!section || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const canvas = document.createElement('canvas');
   canvas.className = 'reviews-actor'; canvas.setAttribute('aria-hidden', 'true');
@@ -51,12 +54,11 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
     new ResizeObserver(resize).observe(section); resize();
 
     // ---- character + clips ----
-    const man = await loadCharacterModel(modelUrl, texture);
+    const man = await loadCharacterModel(model);
     man.scale.setScalar(SCALE);
     // rig: position + pitch (pivot at mid-body so he tilts like a flyer, not like a falling post)
     const rig = new THREE.Group(), yawG = new THREE.Group();
     yawG.position.y = -MID; yawG.add(man); rig.add(yawG); rig.visible = false; scene.add(rig);
-    const fbx = new FBXLoader();
     const clips = {}, actions = {}, lead = {};
     const has = n => !!actions[n];
     const mixer = new THREE.AnimationMixer(man);
@@ -80,18 +82,7 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
       addAction(n, clips[n]);
       if (n === 'stand') addAction('standStill', clips.stand.clone()); // 'Stand' is a get-up move; its last frame is our still pose
     }
-    // One clip at a time (parallel downloads stall the page's own requests). Entrance clips first.
-    const first = ['falling', 'walking', 'land', 'stand', 'greeting'];
-    const order = [...first, ...Object.keys(files).filter(n => !first.includes(n))].filter(n => files[n]);
-    const loaded = {};
-    let chain = Promise.resolve();
-    for (const n of order) {
-      loaded[n] = chain = chain
-        .then(() => fbx.loadAsync(files[n]))
-        .then(f => { if (f.animations[0]) addClip(n, f.animations[0]); })
-        .catch(() => {}); // a missing clip just isn't used
-    }
-    const entranceReady = loaded.greeting || chain;
+    for (const n of REVIEW_CLIPS) { const c = man.animations.find(x => x.name === n); if (c) addClip(n, c); }
 
     // soft contact shadow
     const shadowTex = (() => {
@@ -207,7 +198,6 @@ export function initReviewsActor({ section, modelUrl, texture, clips: files }) {
 
     async function roam(g) {
       // fall in from above the top edge, land, then say hi
-      await entranceReady; guard(g);
       pos.set(rnd(-W * 0.3, W * 0.3), H / 2 + 1.5, 0); vel.y = 0; move = null; facing = faceT = pitch = pitchT = 0;
       rig.visible = true; shadow.visible = true;
       play(has('falling') ? 'falling' : 'pose', 0); gravity = true;

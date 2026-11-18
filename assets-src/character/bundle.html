@@ -1,0 +1,64 @@
+<!doctype html>
+<!--
+  Builds public/assets/3d/character/character.glb: the rigged character (mesh + Mixamo skeleton + texture)
+  plus every animation clip, each stored once as motion data.
+  How to rebuild after adding/replacing a clip:
+    1. copy this file and the mixamo/ folder into public/_bundle/ (served by `npm start`)
+    2. open http://localhost:3000/_bundle/bundle.html — it downloads character.glb when done
+    3. move character.glb to public/assets/3d/character/ and delete public/_bundle/
+  Clip names below are the names the site's code asks for.
+-->
+<html><head><meta charset="utf-8"><title>bundle</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body><pre id="log">building…</pre>
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
+const SRC = 'mixamo/';            // folder holding the Mixamo FBX downloads
+const BASE = 'desk/typing.fbx';   // any "With Skin" download: supplies mesh + skeleton
+const TEXTURE = 'character.png';
+const CLIPS = {
+  // desk (hero)
+  typing: 'desk/typing.fbx', seatedIdle: 'desk/seated-idle.fbx', sittingIdle: 'desk/sitting-idle.fbx',
+  yell: 'desk/sitting-yell.fbx', fist: 'desk/banging-fist.fbx', cheer: 'desk/cheering.fbx',
+  sitToStand: 'desk/sit-to-stand.fbx', standToSit: 'desk/stand-to-sit.fbx',
+  // reviews section
+  falling: 'reviews/air/falling.fbx', flying: 'reviews/air/flying.fbx', floating: 'reviews/air/floating.fbx',
+  swimming: 'reviews/air/swimming.fbx', treading: 'reviews/air/treading-water.fbx',
+  stand: 'reviews/ground/stand.fbx', walking: 'reviews/ground/walking.fbx', running: 'reviews/ground/running.fbx',
+  injuredWalk: 'reviews/ground/injured-walking.fbx', jump: 'reviews/ground/jump.fbx', jumpingJacks: 'reviews/ground/jumping-jacks.fbx',
+  greeting: 'reviews/ground/greeting.fbx', pose: 'reviews/ground/dynamic-pose.fbx', trip: 'reviews/ground/tripping.fbx',
+  land: 'reviews/landing/falling-to-landing.fbx', flatImpact: 'reviews/landing/falling-flat-impact.fbx',
+  fallenIdle: 'reviews/landing/fallen-idle.fbx', standUp: 'reviews/landing/standing-up.fbx',
+};
+const log = m => { document.getElementById('log').textContent += '\n' + m; };
+
+const loader = new FBXLoader();
+const man = await loader.loadAsync(SRC + BASE);
+const tex = await new THREE.TextureLoader().loadAsync(SRC + TEXTURE);
+tex.colorSpace = THREE.SRGBColorSpace; tex.userData.mimeType = 'image/jpeg'; // jpeg keeps the file small
+const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85, metalness: 0 });
+man.traverse(o => {
+  if (!o.isMesh) return;
+  o.geometry.computeVertexNormals(); // the OBJ sent to Mixamo had no normals
+  o.material = mat;
+});
+
+const animations = [];
+for (const [name, file] of Object.entries(CLIPS)) {
+  try {
+    const clip = (await loader.loadAsync(SRC + file)).animations[0];
+    clip.name = name; clip.optimize(); // drop repeated keyframes
+    animations.push(clip); log(`+ ${name}`);
+  } catch (e) { log(`- ${name}: ${e.message}`); }
+}
+
+const glb = await new GLTFExporter().parseAsync(man, { binary: true, animations, onlyVisible: false });
+window.__glb = glb; // read by automated builds
+log(`done: ${(glb.byteLength / 1e6).toFixed(2)} MB, ${animations.length} clips`);
+const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([glb])), download: 'character.glb' });
+a.textContent = 'download character.glb'; document.body.append(a);
+document.title = 'done';
+</script></body></html>
