@@ -13,3 +13,6 @@ Thumbs.db
 # Claude Code local config (skills, memory — not for repo)
 .claude/
 .superpowers/
+
+# Cloudflare wrangler local state
+.wrangler/
