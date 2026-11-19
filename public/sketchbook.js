@@ -1,11 +1,13 @@
 /* =====================================================================
    Selected Builds as a sketchbook.
    Ported from ThreeUI's MengToSketchbookLandingPage: the curled page turn,
-   lighting, spring physics, tilt, zoom and loupe are the original code.
+   lighting, spring physics, tilt and zoom are the original code.
    What changed: each spread is drawn in the browser from a featured work
    as a hologram in the site's colours (screenshot on the left page, a
-   readout on the right) instead of a painted PNG, the intro riffle plays
-   when the section scrolls into view, and the caption opens the project modal.
+   readout on the right) instead of a painted PNG, the loupe is replaced by
+   a target scanner that locks onto parts of the page by itself, the intro
+   riffle plays when the section scrolls into view, and the caption opens
+   the project modal.
    ===================================================================== */
 (function () {
 const SW = 1760, SH = 1240;                    /* spread canvas, same geometry as the source plates */
@@ -87,9 +89,12 @@ function chips(ctx, tags, x, y, maxW, rows, draw) {
   }
   return tags.length ? row + 1 : 0;
 }
+/* where each element of spread i sits, in canvas px [x, y, w, h], for the scanner to lock onto */
+const TARGETS = [];
 async function makeSpread(w, i, total) {
   const c = document.createElement('canvas'); c.width = SW; c.height = SH;
   const ctx = c.getContext('2d');
+  const T = {};
 
   /* light layers under the pages, like the stacked edge of a book */
   for (let k = 4; k >= 1; k--) {
@@ -112,6 +117,7 @@ async function makeSpread(w, i, total) {
   if (im) {
     const k = Math.min((bx1 - bx0) / im.width, (by1 - by0) / im.height);
     const iw = im.width * k, ih = im.height * k, ix = (bx0 + bx1 - iw) / 2, iy = (by0 + by1 - ih) / 2;
+    T.screenshot = [ix, iy, iw, ih];
     glow(ctx, 'rgba(59,130,246,.55)', 30);
     ctx.fillStyle = '#0b0e18'; ctx.fillRect(ix, iy, iw, ih);
     noGlow(ctx);
@@ -122,6 +128,7 @@ async function makeSpread(w, i, total) {
     ctx.strokeStyle = 'rgba(96,165,250,.5)'; ctx.lineWidth = 1.5; ctx.strokeRect(ix, iy, iw, ih);
     brackets(ctx, ix - 10, iy - 10, ix + iw + 10, iy + ih + 10, 26, GREEN, 2.5);
   } else {
+    T.screenshot = [bx0, by0, bx1 - bx0, by1 - by0];
     ctx.strokeStyle = 'rgba(96,165,250,.45)'; ctx.setLineDash([10, 9]); ctx.lineWidth = 2;
     ctx.strokeRect(bx0, by0, bx1 - bx0, by1 - by0); ctx.setLineDash([]);
     ctx.fillStyle = DIM; ctx.textAlign = 'center'; ctx.font = `400 24px ${MONO}`;
@@ -137,7 +144,9 @@ async function makeSpread(w, i, total) {
   ctx.fillText(`// ${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`, tx, PY0 + 92);
   glow(ctx, 'rgba(59,130,246,.75)', 18);
   ctx.fillStyle = WHITE; ctx.font = `700 74px ${DISPLAY}`;
-  const y = drawLines(ctx, wrapLines(ctx, w.title || '', tw), tx, PY0 + 172, 72, 2);
+  const titleLines = wrapLines(ctx, w.title || '', tw);
+  const y = drawLines(ctx, titleLines, tx, PY0 + 172, 72, 2);
+  T.title = [tx, PY0 + 118, Math.max(80, ...titleLines.slice(0, 2).map(l => Math.min(tw, ctx.measureText(l).width))), (y - PY0 - 172) - 4];
   noGlow(ctx);
   const ul = ctx.createLinearGradient(tx, 0, tx + tw * .7, 0);
   ul.addColorStop(0, BLUE); ul.addColorStop(1, 'rgba(59,130,246,0)');
@@ -148,8 +157,11 @@ async function makeSpread(w, i, total) {
   const tagTop = PY1 - 72 - tagRows * 44;
   ctx.fillStyle = MUTED; ctx.font = `300 26px ${BODY}`;
   const room = Math.max(1, Math.floor((tagTop - 42 - (y + 6)) / 40));
-  drawLines(ctx, wrapLines(ctx, desc, tw), tx, y + 14, 40, room);
+  const descLines = wrapLines(ctx, desc, tw);
+  drawLines(ctx, descLines, tx, y + 14, 40, room);
+  if (descLines.length) T.summary = [tx, y - 16, tw, Math.min(room, descLines.length) * 40 + 10];
   if (tags.length) {
+    T.stack = [tx, tagTop - 24, tw, 38 + tagRows * 44];
     ctx.fillStyle = GREEN; ctx.font = `400 19px ${MONO}`; ctx.fillText('built_with:', tx, tagTop);
     chips(ctx, tags, tx, tagTop + 14, tw, 2, true);
   }
@@ -157,6 +169,7 @@ async function makeSpread(w, i, total) {
   ctx.fillStyle = DIM; ctx.font = `400 17px ${MONO}`;
   ctx.fillText(String(i * 2 + 1).padStart(2, '0'), PX0 + 40, PY1 - 30);
   ctx.textAlign = 'right'; ctx.fillText(String(i * 2 + 2).padStart(2, '0'), PX1 - 40, PY1 - 30);
+  TARGETS[i] = T;
 
   try {
     const blob = await new Promise(r => c.toBlob(r, 'image/webp', .92));
@@ -274,8 +287,6 @@ function paint() {
   book.appendChild(a); book.appendChild(b);
   layout();
   caption();
-  syncZoomLayer();
-  placeLoupe();
 }
 let capOut = null, capIn = null;
 function caption() {
@@ -333,8 +344,7 @@ function tick(now) {
     }
   }
   viewSpring();
-  const lmoved = loupeEase();
-  if ((spring || viewActive || lmoved) && raf === null) raf = requestAnimationFrame(tick);
+  if ((spring || viewActive) && raf === null) raf = requestAnimationFrame(tick);
 }
 function kick() { if (raf === null) { last = performance.now(); raf = requestAnimationFrame(tick); } }
 
@@ -343,12 +353,10 @@ const TILT_X = 4.5, TILT_Y = 7;
 const ZOOM_MIN = 0.9, ZOOM_MAX = 1.5;
 const view = { rx: 0, ry: 0, z: 1, trx: 0, try_: 0, tz: 1 };
 let viewActive = false;
-let lastZ = 1;
 function applyView() {
   sb3d.style.setProperty('--rx', view.rx.toFixed(2) + 'deg');
   sb3d.style.setProperty('--ry', view.ry.toFixed(2) + 'deg');
   sb3d.style.setProperty('--zoom', view.z.toFixed(3));
-  if (view.z !== lastZ) { lastZ = view.z; placeLoupe(); }
 }
 function viewSpring() {
   const e = 0.14;
@@ -432,19 +440,19 @@ function startTurn(dir, t) {
   if (turn) { idx = turn.to; turn = null; }
   const from = idx, to = dir === 'next' ? (from + 1) % M : (from - 1 + M) % M;
   if (!PAGES[to].url) return;                    /* that page is still being drawn */
-  shoveLoupe(dir);
+  abortScan();                                   /* the scanner gets out of the way of a turning page */
   turn = { dir: dir, from: from, to: to, t: t || 0 };
   paint();
 }
 function commit() {
   if (!turn) return;
-  if (REDUCED) { idx = turn.to; turn = null; paint(); return; }
-  animateTo(1, () => { idx = turn.to; turn = null; paint(); }, 170, 26);
+  if (REDUCED) { idx = turn.to; turn = null; paint(); scheduleScan(4000); return; }
+  animateTo(1, () => { idx = turn.to; turn = null; paint(); scheduleScan(4000); }, 170, 26);
   kick();
 }
 function cancel() {
   if (!turn) return;
-  animateTo(0, () => { turn = null; paint(); }, 150, 24);
+  animateTo(0, () => { turn = null; paint(); scheduleScan(4000); }, 150, 24);
   kick();
 }
 function step(dir) {
@@ -452,8 +460,6 @@ function step(dir) {
   if (turn) { idx = turn.to; turn = null; }
   startTurn(dir, 0); commit();
 }
-document.getElementById('sbLeft').onclick = () => step('prev');
-document.getElementById('sbRight').onclick = () => step('next');
 document.getElementById('sbOpen').onclick = () => openModal(PAGES[turn ? turn.to : idx].id);
 addEventListener('keydown', e => {
   if (!inView) return;                                     /* arrow keys belong to the page elsewhere */
@@ -466,101 +472,88 @@ addEventListener('keydown', e => {
   step(e.key === 'ArrowRight' ? 'next' : 'prev');
 });
 
-/* --------------------------------------------------- loupe + controls */
-const loupe = document.getElementById('loupe');
+/* ------------------------------------------------- the target scanner */
+/* Every so often a reticle drifts onto the open spread, locks onto two or
+   three of its parts (screenshot, title, summary, stack), reads them out,
+   then goes dark until the next pass. It never takes input. */
+const scanEl = document.getElementById('scan');
+const scanLabel = document.getElementById('scanLabel');
+const scanConf = document.getElementById('scanConf');
+const scanXY = document.getElementById('scanXY');
+const scanBtn = document.getElementById('scanBtn');
 const zRead = document.getElementById('zRead');
-const loupeBtn = document.getElementById('loupeBtn');
 const zInBtn = document.getElementById('zIn'), zOutBtn = document.getElementById('zOut');
-const MAG = 2.3;
-let loupeOn = true, lx = null, ly = null, lgrab = null, lTarget = null;
+const SEEK = 58;                                  /* reticle size while searching, px */
+let scanOn = !REDUCED, scanRun = 0, scanTimer = null;
 
-function loupeSize() { return Math.round(Math.max(165, Math.min(262, book.clientWidth * 0.235))); }
-function bookBox() { return { x: 0, y: 0, w: book.clientWidth, h: book.clientHeight }; }
-function restLoupe() {
-  const b = bookBox();
-  lx = b.x + b.w * 0.88; ly = b.y + b.h * 0.855;
-  placeLoupe();
+const wait = ms => new Promise(r => setTimeout(r, ms));
+/* canvas box -> pixels in the book's frame, following the zoom (drawn about the centre) */
+function toPx([x, y, w, h]) {
+  const bw = book.clientWidth, bh = book.clientHeight, z = view.z, cx = bw / 2, cy = bh / 2;
+  const k = bw / SW;
+  return { x: cx + ((x + w / 2) * k - cx) * z, y: cy + ((y + h / 2) * k - cy) * z, w: w * k * z, h: h * k * z };
 }
-const zoomWrap = document.getElementById('zoomWrap');
-const zoomInner = document.getElementById('zoomInner');
-function syncZoomLayer() {
-  zoomInner.textContent = '';
-  for (const c of book.children) {
-    if (c.classList.contains('sb-zone')) continue;
-    zoomInner.appendChild(c.cloneNode(true));
+function aim(x, y, w, h) {
+  scanEl.style.setProperty('--x', x.toFixed(1) + 'px');
+  scanEl.style.setProperty('--y', y.toFixed(1) + 'px');
+  scanEl.style.setProperty('--w', w.toFixed(1) + 'px');
+  scanEl.style.setProperty('--h', h.toFixed(1) + 'px');
+}
+function abortScan() {
+  scanRun++;
+  scanEl.classList.remove('on', 'locked');
+}
+function scheduleScan(ms) {
+  clearTimeout(scanTimer);
+  if (scanOn) scanTimer = setTimeout(sweep, ms);
+}
+async function sweep() {
+  const run = ++scanRun;
+  const T = TARGETS[idx];
+  if (!scanOn || !inView || turn || drag || introOn || !T) { if (scanOn) scheduleScan(2500); return; }
+  const names = Object.keys(T).sort(() => Math.random() - .5).slice(0, 2 + (Math.random() < .5));
+  const live = () => run === scanRun && !turn && inView;
+
+  /* enter from just off the page's edge, without animating the jump there */
+  const bw = book.clientWidth, bh = book.clientHeight;
+  scanEl.classList.add('jump');
+  aim(Math.random() < .5 ? bw * .02 : bw * .98, bh * (.25 + Math.random() * .5), SEEK, SEEK);
+  void scanEl.offsetWidth;
+  scanEl.classList.remove('jump');
+  scanEl.classList.add('on');
+
+  for (const name of names) {
+    if (!live()) return;
+    const p = toPx(T[name]);
+    scanEl.classList.remove('locked');
+    aim(p.x, p.y, SEEK, SEEK);                    /* glide over, still small */
+    await wait(950);
+    if (!live()) return;
+    aim(p.x, p.y, p.w + 22, p.h + 18);            /* brackets snap out around it */
+    scanEl.classList.add('locked');
+    scanLabel.textContent = '// lock: ' + name;
+    scanXY.textContent = `x ${(T[name][0] / SW).toFixed(3)}  y ${(T[name][1] / SH).toFixed(3)}`;
+    const target = 94 + Math.random() * 5.9, t0 = performance.now();
+    await new Promise(done => {
+      (function count(now) {
+        const k = Math.min(1, (now - t0) / 650);
+        scanConf.textContent = (target * k).toFixed(1) + '%';
+        if (k < 1 && live()) requestAnimationFrame(count); else done();
+      })(t0);
+    });
+    await wait(1100);
   }
+  if (!live()) return;
+  scanEl.classList.remove('locked', 'on');
+  scheduleScan(5000 + Math.random() * 4000);
 }
-function placeLoupe() {
-  if (lx === null) return;
-  const B = bookBox(), bw = B.w, bh = B.h;
-  if (!bw) return;
-  const R = loupeSize() / 2, bez = R * 2 * 0.058;
-  loupe.style.setProperty('--lr', R * 2 + 'px');
-  loupe.style.transform = 'translate3d(' + (lx - R).toFixed(1) + 'px,' + (ly - R).toFixed(1) + 'px,0)';
-  if (loupeOn) loupe.classList.add('on');
-  const z = view.z, cx = bw / 2, cy = bh / 2;
-  const x0 = cx + (bw * .051 - cx) * z, x1 = cx + (bw * .949 - cx) * z;
-  const y0 = cy + (bh * .218 - cy) * z, y1 = cy + (bh * .782 - cy) * z;
-  const nx = Math.max(x0, Math.min(lx, x1));
-  const ny = Math.max(y0, Math.min(ly, y1));
-  const inside = (lx > x0 && lx < x1 && ly > y0 && ly < y1)
-    ? Math.min(lx - x0, x1 - lx, ly - y0, y1 - ly)
-    : -Math.hypot(lx - nx, ly - ny);
-  const k = Math.max(0, Math.min(1, (inside + R * 0.30) / (R * 0.55)));
-  zoomWrap.style.opacity = (loupeOn ? k : 0).toFixed(3);
-  if (k <= 0.002) return;
-  const r = (R - bez).toFixed(1);
-  const mask = 'radial-gradient(circle ' + r + 'px at ' + lx.toFixed(1) + 'px ' + ly.toFixed(1) + 'px,'
-    + '#000 calc(100% - 1px),transparent 100%)';
-  zoomWrap.style.webkitMaskImage = mask;
-  zoomWrap.style.maskImage = mask;
-  const px = cx + (lx - cx) / z, py = cy + (ly - cy) / z, s = MAG * z;
-  zoomInner.style.transform = 'translate(' + (lx - px * s).toFixed(1) + 'px,' + (ly - py * s).toFixed(1) + 'px) '
-    + 'scale(' + s.toFixed(4) + ')';
-}
-function shoveLoupe(dir) {
-  if (!loupeOn || lx === null || lgrab) return;
-  const b = bookBox();
-  const nx = (b.w / 2 + (lx - b.x - b.w / 2) / view.z) / b.w, ny = (b.h / 2 + (ly - b.y - b.h / 2) / view.z) / b.h;
-  if (nx < 0.02 || nx > 0.98 || ny < 0.17 || ny > 0.83) return;
-  lTarget = { x: b.x + b.w * (dir === 'next' ? 0.12 : 0.88), y: b.y + b.h * 0.855 };
-  kick();
-}
-function loupeEase() {
-  if (!lTarget) return false;
-  if (lgrab) { lTarget = null; return false; }
-  const dx = lTarget.x - lx, dy = lTarget.y - ly;
-  if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) { lx = lTarget.x; ly = lTarget.y; lTarget = null; placeLoupe(); return false; }
-  lx += dx * 0.17; ly += dy * 0.17; placeLoupe();
-  return true;
-}
-loupe.addEventListener('pointerdown', e => {
-  if (!loupeOn || e.button !== 0) return;
-  e.preventDefault(); e.stopPropagation();
-  lTarget = null;
-  lgrab = { cx: e.clientX, cy: e.clientY, lx0: lx, ly0: ly };
-  loupe.classList.add('held');
-  loupe.setPointerCapture(e.pointerId);
-  hideHint();
-});
-loupe.addEventListener('pointermove', e => {
-  if (!lgrab) return;
-  const b = bookBox(), R = loupeSize() / 2;
-  lx = Math.max(b.x - R * 0.7, Math.min(b.x + b.w + R * 0.7, lgrab.lx0 + (e.clientX - lgrab.cx)));
-  ly = Math.max(b.y - R * 0.7, Math.min(b.y + b.h + R * 1.0, lgrab.ly0 + (e.clientY - lgrab.cy)));
-  placeLoupe();
-});
-function dropLoupe() { lgrab = null; loupe.classList.remove('held'); }
-loupe.addEventListener('pointerup', dropLoupe);
-loupe.addEventListener('pointercancel', dropLoupe);
-loupeBtn.onclick = () => {
-  loupeOn = !loupeOn;
-  loupeBtn.setAttribute('aria-pressed', String(loupeOn));
-  loupe.classList.toggle('on', loupeOn);
-  if (loupeOn && lx === null) restLoupe();
-  placeLoupe();
+scanBtn.onclick = () => {
+  scanOn = !scanOn;
+  scanBtn.setAttribute('aria-pressed', String(scanOn));
+  if (scanOn) scheduleScan(300); else { clearTimeout(scanTimer); abortScan(); }
 };
-addEventListener('resize', () => { lx = null; restLoupe(); });
+scanBtn.setAttribute('aria-pressed', String(scanOn));
+addEventListener('resize', abortScan);
 
 function syncZoom() {
   zRead.textContent = Math.round(view.tz * 100) + '%';
@@ -572,7 +565,7 @@ zOutBtn.onclick = () => { setView(view.trx, view.try_, view.tz / 1.16); hideHint
 
 /* ---------------------------------------------------------- the riffle */
 let riffle = null, riffleAt = 0, introOn = false;
-function endIntro() { introOn = false; wrap.classList.remove('intro', 'b2'); }
+function endIntro() { introOn = false; wrap.classList.remove('intro', 'b2'); scheduleScan(2200); }
 function riffleStep() {
   const s = riffle[riffleAt];
   wrap.classList.toggle('b2', s.bell > 0.55);
@@ -586,7 +579,7 @@ function riffleStep() {
 }
 function startIntro() {
   const coarse = matchMedia('(max-width: 640px), (pointer: coarse)').matches;
-  if (coarse || REDUCED || M < 2) { idx = LAND; paint(); return; }
+  if (coarse || REDUCED || M < 2) { idx = LAND; paint(); scheduleScan(2200); return; }
   const steps = M + LAND;
   riffle = [];
   for (let r = 0; r < steps; r++) {
@@ -600,13 +593,14 @@ function startIntro() {
 /* ------------------------------------------------------------- boot */
 idx = 0;
 paint(); applyView();
-syncZoom(); restLoupe();
+syncZoom();
 wrap.classList.add('ready');
 /* the riffle plays once, the first time the book comes into view */
 let played = false;
 new IntersectionObserver(([e]) => {
   inView = e.isIntersecting;
-  if (!inView) { setView(0, 0, view.tz); return; }
+  if (!inView) { setView(0, 0, view.tz); abortScan(); return; }
+  if (played) scheduleScan(1500);
   if (!played) { played = true; allDrawn.then(() => setTimeout(startIntro, 220)); }
 }, { threshold: 0.35 }).observe(stage);
 };
