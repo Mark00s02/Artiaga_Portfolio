@@ -212,7 +212,14 @@ function renderWorksGrid(works) {
         </div>
       </article>`).join('');
   const rest = featured ? works.filter(w => !top.includes(w)) : works;
-  grid.innerHTML = (featured && rest.length ? '<span class="section-tag works-more-tag">// more_projects</span>' : '') + rest.map(w => {
+  // portrait (phone) screenshots get their own row: mixed in, they stretch every wide card beside them
+  const wide = rest.filter(w => w.imgOrientation !== 'portrait');
+  const tall = rest.filter(w => w.imgOrientation === 'portrait');
+  grid.innerHTML = (featured && wide.length ? '<span class="section-tag works-more-tag">// more_projects</span>' : '')
+    + wide.map(workCard).join('')
+    + (tall.length ? `<span class="section-tag works-more-tag">// mobile_apps</span><div class="works-grid-tall">${tall.map(workCard).join('')}</div>` : '');
+
+  function workCard(w) {
     const tags = tagsOf(w);
     return `
       <div class="work-card" onclick="openModal('${w._id}')">
@@ -226,7 +233,7 @@ function renderWorksGrid(works) {
           </div>
         </div>
       </div>`;
-  }).join('');
+  }
 }
 
 // ---- MODAL ----
