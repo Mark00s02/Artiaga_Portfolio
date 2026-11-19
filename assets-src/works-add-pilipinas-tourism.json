@@ -1,0 +1,21 @@
+{
+  "update_existing": [],
+  "add_new": [
+    {
+      "title": "Pilipinas Tourism",
+      "cat": "Web App",
+      "desc": "An interactive 3D travel map of the Philippines. Pick one of ten destinations on the map, from Batanes to Davao, and fly into a 3D tour of it: terrain built from real elevation data, draped with satellite imagery, and dressed with landmarks such as lighthouses, stone houses, churches, boats and reef life. Each place is told in scroll-driven chapters with photos and quick facts, and a travel passport collects a stamp for every destination's question you answer. Python tools bake the elevation, imagery and province outlines ahead of time, so the site runs with no server.\n\nExplore it here:\n\nhttps://mark00s02.github.io/Pilipinas_Tourism/",
+      "img": "assets/works/pilipinas-tourism/1-batanes.jpg",
+      "gallery": [
+        "assets/works/pilipinas-tourism/2-map.jpg",
+        "assets/works/pilipinas-tourism/3-el-nido.jpg",
+        "assets/works/pilipinas-tourism/4-mayon.jpg",
+        "assets/works/pilipinas-tourism/5-batanes-hills.jpg",
+        "assets/works/pilipinas-tourism/6-boracay.jpg"
+      ],
+      "tags": "JavaScript, Three.js, WebGL, HTML, CSS, Python",
+      "featured": true,
+      "imgOrientation": "landscape"
+    }
+  ]
+}
