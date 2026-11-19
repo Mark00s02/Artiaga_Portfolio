@@ -1,70 +1,69 @@
-/* Selected Builds as a sketchbook. Styles ported from ThreeUI's MengToSketchbookLandingPage,
-   scoped to the section so they never touch the rest of the site. */
+/* Selected Builds as a holographic sketchbook. Page-turn, loupe and control styles ported from
+   ThreeUI's MengToSketchbookLandingPage, re-coloured in the site's theme and scoped to the section. */
 .sketch-section{
-  --paper:#ece7dc;--ink:#2b2721;--ink-soft:rgba(43,39,33,.58);--ink-faint:rgba(43,39,33,.36);
-  --hairline:rgba(43,39,33,.14);--earth:#9a6a3e;
-  --display:'Instrument Serif',"New York",Georgia,'Times New Roman',serif;
-  --font:'Newsreader',"New York",Georgia,'Times New Roman',serif;
-  --track-caps:.24em;--track-nav:.06em;
-  color:var(--ink);font-family:var(--font);
-  /* stands in for the source's painted wash */
+  --holo:#60a5fa;--holo-soft:rgba(96,165,250,.45);--holo-faint:rgba(96,165,250,.16);
   background:
-    radial-gradient(55% 40% at 18% 34%,rgba(190,160,110,.20),transparent 70%),
-    radial-gradient(45% 38% at 84% 62%,rgba(140,160,128,.16),transparent 70%),
-    var(--paper);
-  border-top:0;border-bottom:0;overflow:hidden;
+    radial-gradient(60% 45% at 50% 46%,rgba(59,130,246,.13),transparent 70%),
+    var(--bg2);
+  overflow:hidden;
 }
-.sketch-section .section-tag{color:var(--earth)}
-.sketch-section .section-title{color:var(--ink);font-family:var(--display);font-weight:400;letter-spacing:.01em}
-.sketch-section .section-title .accent-text{color:var(--ink);font-style:italic}
-/* the 3D hero fades out over the top of this section, so its heading stays light there */
+/* the 3D hero fades out over the top of this section */
 .hero.has-3d + .sketch-section{
   background:
-    linear-gradient(to bottom,var(--bg) 0,rgba(236,231,220,0) 30vh),
-    radial-gradient(55% 40% at 18% 54%,rgba(190,160,110,.20),transparent 70%),
-    radial-gradient(45% 38% at 84% 72%,rgba(140,160,128,.16),transparent 70%),
-    linear-gradient(to bottom,transparent 0,transparent 8vh,var(--paper) 30vh);
+    radial-gradient(60% 45% at 50% 56%,rgba(59,130,246,.13),transparent 70%),
+    linear-gradient(to bottom,transparent 0,transparent 30vh,var(--bg2) 70vh);
+  border-top-color:transparent;
 }
-.hero.has-3d + .sketch-section .section-title,
-.hero.has-3d + .sketch-section .section-title .accent-text{color:var(--white)}
-.hero.has-3d + .sketch-section .section-tag{color:var(--green)}
 
-/* ---------------- sketchbook ---------------- */
+/* ---------------- the book ---------------- */
 .sketch-section .sb-wrap,.sketch-section .sb-wrap *{-webkit-user-select:none;user-select:none}
 .sketch-section .sb-wrap img{-webkit-user-drag:none}
 .sketch-section .sb-wrap{display:grid;justify-items:center;gap:20px;width:100%;position:relative;z-index:2;
   opacity:0;transition:opacity .6s ease}
 .sketch-section .sb-wrap.ready{opacity:1}
-.sketch-section .sb-stage{display:flex;align-items:center;justify-content:center;width:100%;position:relative;touch-action:pan-y}
+/* the spread keeps the source's frame, which leaves empty space above and below the pages */
+.sketch-section .sb-stage{display:flex;align-items:center;justify-content:center;width:100%;position:relative;
+  touch-action:pan-y;margin:-7% 0 -8%}
 .sketch-section .sb-arrow{
   flex:none;display:inline-flex;align-items:center;justify-content:center;padding:6px 2px;
-  border:0;background:transparent;color:var(--ink-faint);cursor:pointer;transition:color .2s;
+  border:0;background:transparent;color:var(--dim);cursor:pointer;transition:color .2s,filter .2s;
   -webkit-tap-highlight-color:transparent;z-index:8;
 }
-.sketch-section .sb-arrow:hover{color:var(--ink)}
-.sketch-section .sb-arrow:focus-visible,.sketch-section .tool:focus-visible,.sketch-section .sb-open:focus-visible,
-.sketch-section .plate:focus-visible{outline:2px solid var(--earth);outline-offset:3px}
+.sketch-section .sb-arrow:hover{color:var(--holo);filter:drop-shadow(0 0 6px var(--blue-glow))}
+.sketch-section .sb-arrow:focus-visible,.sketch-section .tool:focus-visible,.sketch-section .sb-open:focus-visible{
+  outline:2px solid var(--blue);outline-offset:3px}
 .sketch-section .sb-3d{position:relative;flex:1 1;min-width:0;max-width:960px;perspective:1750px;perspective-origin:50% 46%}
 .sketch-section .sb-tilt{
   position:relative;transform-style:preserve-3d;
   transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(var(--zoom,1));will-change:transform;
 }
 .sketch-section .sb-book{position:relative;width:100%;aspect-ratio:1760/1240;transform-style:preserve-3d;z-index:1}
+/* scanlines over the projection, and one slow sweep of light down the pages */
+.sketch-section .sb-book::after{
+  content:"";position:absolute;inset:21.8% 5.1%;pointer-events:none;z-index:7;
+  background:
+    linear-gradient(180deg,transparent 0,rgba(147,197,253,.10) 48%,rgba(147,197,253,.18) 50%,transparent 52%) 0 -120% / 100% 220% no-repeat,
+    repeating-linear-gradient(180deg,transparent 0 3px,rgba(96,165,250,.05) 3px 4px);
+  animation:sb-sweep 6.5s linear infinite;
+}
+@keyframes sb-sweep{to{background-position:0 220%,0 0}}
+
+/* the projector's light pooling under the book, in place of a cast shadow */
 .sketch-section .sb-cast{position:absolute;pointer-events:none;z-index:0}
 .sketch-section .sb-cast.ambient{
-  left:5%;right:5%;top:27%;bottom:2%;
-  background:radial-gradient(50% 50% at 50% 58%,rgba(58,44,26,.34) 0%,rgba(58,44,26,.19) 40%,rgba(58,44,26,0) 74%);
-  filter:blur(26px);opacity:calc(1 - var(--shade,0) * .42);
+  left:4%;right:4%;top:22%;bottom:16%;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(59,130,246,.30) 0%,rgba(59,130,246,.10) 50%,rgba(59,130,246,0) 76%);
+  filter:blur(30px);opacity:calc(1 - var(--shade,0) * .35);
 }
 .sketch-section .sb-cast.contact{
-  left:9%;right:9%;top:62%;bottom:10%;
-  background:radial-gradient(50% 44% at 50% 42%,rgba(44,32,14,.40) 0%,rgba(44,32,14,.17) 48%,rgba(44,32,14,0) 78%);
-  filter:blur(11px);opacity:calc(1 - var(--shade,0) * .5);
+  left:14%;right:14%;top:79%;bottom:15%;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(96,165,250,.55) 0%,rgba(59,130,246,.18) 45%,rgba(59,130,246,0) 75%);
+  filter:blur(8px);
 }
 .sketch-section .sb-cast.hair{
-  left:12%;right:12%;top:70%;bottom:17%;
-  background:radial-gradient(50% 52% at 50% 40%,rgba(40,28,10,.34) 0%,rgba(40,28,10,0) 76%);
-  filter:blur(4px);opacity:calc(1 - var(--shade,0) * .62);
+  left:22%;right:22%;top:81.2%;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(147,197,253,.9),transparent);
+  filter:blur(.5px);
 }
 .sketch-section .sb-full{position:absolute;inset:0}
 .sketch-section .sb-full img{width:100%;height:auto;display:block}
@@ -76,11 +75,9 @@
 .sketch-section .gutter-shade{
   position:absolute;top:var(--pg,21.8%);bottom:var(--pg,21.8%);width:46%;
   pointer-events:none;opacity:calc(var(--shade,0) * .62);
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 5.2%,#000 94.8%,transparent 100%);
-  mask-image:linear-gradient(180deg,transparent 0,#000 5.2%,#000 94.8%,transparent 100%);
 }
-.sketch-section .gutter-shade.left{right:0;background:linear-gradient(270deg,rgba(52,38,20,.30),rgba(52,38,20,0) 82%)}
-.sketch-section .gutter-shade.right{left:0;background:linear-gradient(90deg,rgba(52,38,20,.24),rgba(52,38,20,0) 82%)}
+.sketch-section .gutter-shade.left{right:0;background:linear-gradient(270deg,rgba(2,6,23,.55),rgba(2,6,23,0) 82%)}
+.sketch-section .gutter-shade.right{left:0;background:linear-gradient(90deg,rgba(2,6,23,.45),rgba(2,6,23,0) 82%)}
 
 /* ---- the turning leaf: nested strips forming a curved surface ---- */
 .sketch-section .curl{position:absolute;top:0;height:100%;width:calc(var(--bw,0px) * var(--span));transform-style:preserve-3d;z-index:6}
@@ -99,104 +96,95 @@
   background-repeat:no-repeat;background-size:var(--bw,0px) auto;
 }
 .sketch-section .face.back{transform:rotateY(180deg)}
-.sketch-section .face .sh,.sketch-section .face .gl{
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 5.2%,#000 94.8%,transparent 100%);
-  mask-image:linear-gradient(180deg,transparent 0,#000 5.2%,#000 94.8%,transparent 100%);
-}
-.sketch-section .strip.edge .face .sh,.sketch-section .strip.edge .face .gl{
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 9%,#000 91%,transparent 100%),var(--hf);
-  mask-image:linear-gradient(180deg,transparent 0,#000 9%,#000 91%,transparent 100%),var(--hf);
-  -webkit-mask-composite:source-in;mask-composite:intersect;
-}
-.sketch-section .curl.next .strip.edge .face.front,.sketch-section .curl.prev .strip.edge .face.back{--hf:linear-gradient(90deg,#000 0 22%,transparent 96%)}
-.sketch-section .curl.next .strip.edge .face.back,.sketch-section .curl.prev .strip.edge .face.front{--hf:linear-gradient(270deg,#000 0 22%,transparent 96%)}
 .sketch-section .face .sh{position:absolute;left:0;right:0;top:var(--pg,21.8%);bottom:var(--pg,21.8%);pointer-events:none}
-.sketch-section .curl.next .face.front .sh,.sketch-section .curl.prev .face.back .sh{background:linear-gradient(90deg,rgba(58,43,20,var(--a1,0)),rgba(58,43,20,var(--a2,0)))}
-.sketch-section .curl.next .face.back .sh,.sketch-section .curl.prev .face.front .sh{background:linear-gradient(90deg,rgba(58,43,20,var(--a2,0)),rgba(58,43,20,var(--a1,0)))}
+.sketch-section .curl.next .face.front .sh,.sketch-section .curl.prev .face.back .sh{background:linear-gradient(90deg,rgba(2,6,23,var(--a1,0)),rgba(2,6,23,var(--a2,0)))}
+.sketch-section .curl.next .face.back .sh,.sketch-section .curl.prev .face.front .sh{background:linear-gradient(90deg,rgba(2,6,23,var(--a2,0)),rgba(2,6,23,var(--a1,0)))}
+/* the lifted leaf catches the projector's light */
 .sketch-section .face .gl{
   position:absolute;left:0;right:0;top:var(--pg,21.8%);bottom:var(--pg,21.8%);
-  pointer-events:none;background:#fffaf0;opacity:calc(var(--shade,0) * var(--lit,1) * var(--lit,1) * .20);
+  pointer-events:none;background:#93c5fd;opacity:calc(var(--shade,0) * var(--lit,1) * var(--lit,1) * .22);
 }
 
-/* ---- the loupe ---- */
+/* ---- the lens ---- */
 .sketch-section .loupe{position:absolute;left:0;top:0;width:var(--lr,270px);height:var(--lr,270px);
   pointer-events:none;z-index:80;opacity:0;transition:opacity .25s ease;will-change:transform}
 .sketch-section .loupe.on{opacity:1}
 .sketch-section .loupe.held .ring{cursor:grabbing}
 .sketch-section .loupe .ring{
   position:absolute;inset:0;border-radius:50%;pointer-events:auto;cursor:grab;
-  padding:calc(var(--lr,270px) * .058);
-  box-shadow:0 1px 2px rgba(58,44,26,.30),0 10px 18px rgba(58,44,26,.24),0 26px 40px rgba(58,44,26,.20),0 48px 66px rgba(58,44,26,.13);
+  padding:calc(var(--lr,270px) * .045);
+  box-shadow:0 0 0 1px rgba(147,197,253,.7),0 0 24px rgba(59,130,246,.55),0 20px 50px rgba(0,0,0,.55);
 }
 .sketch-section .loupe .ring:before{
   content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
-  background:linear-gradient(146deg,#fdf7e9 0%,#e6d7b4 14%,#b69d70 32%,#7d6740 50%,#cdbb92 66%,#f4ead3 80%,#9b8459 100%);
-  box-shadow:inset 0 1px 1px rgba(255,255,255,.8),inset 0 -2px 3px rgba(70,52,26,.5);
-  -webkit-mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 0 88.2%,#000 89.8% 100%);
-  mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 0 88.2%,#000 89.8% 100%);
+  background:conic-gradient(from 210deg,#1e2a40,#3b82f6 12%,#0f1420 30%,#253354 52%,#60a5fa 66%,#131929 82%,#1e2a40);
+  -webkit-mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 0 90.6%,#000 91.8% 100%);
+  mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 0 90.6%,#000 91.8% 100%);
 }
 .sketch-section .loupe .grip{
   position:absolute;left:50%;top:50%;
-  width:calc(var(--lr,270px) * .74);height:calc(var(--lr,270px) * .125);
-  transform-origin:0 50%;transform:rotate(40deg) translate(calc(var(--lr,270px) * .33),-50%);
-  border-radius:calc(var(--lr,270px) * .06);pointer-events:auto;cursor:grab;
+  width:calc(var(--lr,270px) * .70);height:calc(var(--lr,270px) * .10);
+  transform-origin:0 50%;transform:rotate(40deg) translate(calc(var(--lr,270px) * .34),-50%);
+  border-radius:calc(var(--lr,270px) * .05);pointer-events:auto;cursor:grab;
   background:
-    linear-gradient(180deg,rgba(255,255,255,.46) 0 13%,rgba(255,255,255,0) 44%,rgba(0,0,0,.26) 100%),
-    linear-gradient(90deg,#d9bd82 0 14%,#a9884e 14% 20%,#6d4c2b 20% 62%,#5a3d22 62% 92%,#7a563180 92% 100%);
-  box-shadow:0 8px 15px rgba(58,44,26,.26),0 18px 26px rgba(58,44,26,.14);
+    linear-gradient(180deg,rgba(255,255,255,.18) 0 14%,rgba(255,255,255,0) 44%,rgba(0,0,0,.35) 100%),
+    linear-gradient(90deg,#253354 0 16%,#60a5fa 16% 19%,#131929 19% 70%,#22c55e 70% 72%,#131929 72% 100%);
+  box-shadow:0 0 0 1px rgba(96,165,250,.35),0 10px 22px rgba(0,0,0,.5);
 }
 .sketch-section .lens{
   position:relative;display:block;width:100%;height:100%;border-radius:50%;overflow:hidden;
-  box-shadow:inset 0 0 0 1px rgba(52,40,22,.55),inset 0 4px 12px rgba(40,30,14,.28),inset 0 -7px 16px rgba(255,250,240,.14);
+  box-shadow:inset 0 0 0 1px rgba(147,197,253,.6),inset 0 0 18px rgba(59,130,246,.35);
 }
 .sketch-section .zoomwrap{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2;opacity:0}
 .sketch-section .zoominner{position:absolute;inset:0;transform-origin:0 0}
 .sketch-section .lens:before,.sketch-section .lens:after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none}
+/* targeting reticle on the glass */
 .sketch-section .lens:before{z-index:1;
-  background:radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 54%,rgba(58,44,26,.10) 76%,rgba(46,34,16,.34) 100%);
-  box-shadow:inset 0 0 0 2px rgba(130,162,196,.26),inset 0 0 0 4px rgba(206,158,112,.15);
+  background:
+    linear-gradient(rgba(147,197,253,.55),rgba(147,197,253,.55)) 50% 8% / 1px 10% no-repeat,
+    linear-gradient(rgba(147,197,253,.55),rgba(147,197,253,.55)) 50% 92% / 1px 10% no-repeat,
+    linear-gradient(rgba(147,197,253,.55),rgba(147,197,253,.55)) 8% 50% / 10% 1px no-repeat,
+    linear-gradient(rgba(147,197,253,.55),rgba(147,197,253,.55)) 92% 50% / 10% 1px no-repeat,
+    radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 60%,rgba(2,6,23,.35) 100%);
 }
 .sketch-section .lens:after{z-index:2;
-  background:
-    radial-gradient(36% 26% at 29% 19%,rgba(255,255,255,.30),rgba(255,255,255,0) 76%),
-    radial-gradient(24% 16% at 74% 86%,rgba(255,255,255,.12),rgba(255,255,255,0) 80%),
-    linear-gradient(150deg,rgba(255,255,255,.06) 0 18%,rgba(255,255,255,0) 42%);
+  background:radial-gradient(36% 24% at 30% 20%,rgba(191,219,254,.22),rgba(191,219,254,0) 76%);
 }
 
 /* ---- controls ---- */
 .sketch-section .sb-tools{
-  display:flex;align-items:center;gap:6px;border:1px solid var(--hairline);border-radius:999px;
-  padding:5px 7px;background:rgba(250,246,238,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  display:flex;align-items:center;gap:6px;border:1px solid var(--border2);border-radius:var(--radius-lg);
+  padding:5px 7px;background:rgba(11,14,24,.75);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
 }
 .sketch-section .tool{
   width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;
-  border:0;border-radius:50%;background:transparent;color:var(--ink-soft);
+  border:0;border-radius:var(--radius);background:transparent;color:var(--muted);
   cursor:pointer;transition:background-color .18s ease,color .18s ease;
 }
-.sketch-section .tool:hover{background:rgba(255,252,244,.9);color:var(--ink)}
-.sketch-section .tool[aria-pressed="true"]{background:rgba(154,106,62,.16);color:var(--earth)}
+.sketch-section .tool:hover{background:var(--blue-dim);color:var(--white)}
+.sketch-section .tool[aria-pressed="true"]{background:var(--blue-dim);color:var(--holo);box-shadow:inset 0 0 0 1px var(--holo-faint)}
 .sketch-section .tool:disabled{opacity:.32;cursor:default;background:transparent}
 .sketch-section .tool svg{width:15px;height:15px;display:block}
-.sketch-section .tool-sep{width:1px;height:17px;background:var(--hairline);margin:0 2px}
-.sketch-section .zoom-read{font-size:11px;letter-spacing:.1em;color:var(--ink-faint);min-width:40px;text-align:center;font-variant-numeric:tabular-nums}
+.sketch-section .tool-sep{width:1px;height:17px;background:var(--border2);margin:0 2px}
+.sketch-section .zoom-read{font:400 11px var(--font-mono);color:var(--dim);min-width:44px;text-align:center}
 @media (pointer:coarse){.sketch-section .loupe{display:none}}
 
-.sketch-section .sb-zone{position:absolute;top:0;bottom:0;border:0;background:transparent;cursor:grab;z-index:60;-webkit-tap-highlight-color:transparent}
+/* only the pages turn; the empty frame around them must not cover the link below */
+.sketch-section .sb-zone{position:absolute;top:21.8%;bottom:21.8%;border:0;background:transparent;cursor:grab;z-index:60;-webkit-tap-highlight-color:transparent}
 .sketch-section .sb-zone:active{cursor:grabbing}
 .sketch-section .sb-prev{left:0;width:50%}
 .sketch-section .sb-next{right:0;width:50%}
 
 .sketch-section .sb-captions{display:grid;justify-items:center;margin-top:-6px}
 .sketch-section .sb-captions>*{grid-area:1/1;margin:0}
-.sketch-section .sb-caption{font-family:var(--display);font-size:clamp(22px,2.2vw,28px);color:var(--ink);animation:sb-cap-in .5s ease both}
+.sketch-section .sb-caption{font:700 clamp(22px,2.2vw,28px)/1.2 var(--font-display);color:var(--white);
+  text-shadow:0 0 18px var(--blue-glow);animation:sb-cap-in .5s ease both}
 .sketch-section .sb-caption.live{animation:none}
 @keyframes sb-cap-in{0%{opacity:0}}
-.sketch-section .sb-open{
-  margin-top:-8px;border:0;background:transparent;cursor:pointer;color:var(--earth);
-  font:italic 400 17px var(--font);text-decoration:underline;text-decoration-color:rgba(154,106,62,.35);text-underline-offset:4px;
-}
-.sketch-section .sb-open:hover{text-decoration-color:var(--earth)}
-.sketch-section .sb-hint{margin:0;font-size:13px;letter-spacing:.02em;color:var(--ink-faint);font-style:italic;transition:opacity .4s ease}
+.sketch-section .sb-open{margin-top:-10px;border:0;background:transparent;cursor:pointer;
+  font:400 .8rem var(--font-mono);color:var(--green);transition:text-shadow .2s}
+.sketch-section .sb-open:hover{text-shadow:0 0 10px var(--green-glow)}
+.sketch-section .sb-hint{margin:0;font:400 11px var(--font-mono);color:var(--dim);transition:opacity .4s ease}
 .sketch-section .sb-hint.gone{opacity:0}
 .sketch-section .sb-wrap.intro .sb-full img,.sketch-section .sb-wrap.intro .sb-half-img{filter:url(#sb-mblur-1)}
 .sketch-section .sb-wrap.intro.b2 .sb-full img,.sketch-section .sb-wrap.intro.b2 .sb-half-img{filter:url(#sb-mblur-2)}
@@ -207,34 +195,12 @@
   .sketch-section .sb-arrow.left{left:2px}
   .sketch-section .sb-arrow.right{right:2px}
   .sketch-section .sb-3d{max-width:none}
-  .sketch-section .sb-hint{font-size:12px;padding:0 16px;text-align:center}
+  .sketch-section .sb-hint{padding:0 16px;text-align:center}
+}
+@media (prefers-reduced-motion:reduce){
+  .sketch-section .sb-wrap{transition:none}
+  .sketch-section .sb-book::after{animation:none}
 }
 
-/* ---- the index ---- */
-.sketch-section .plates{max-width:900px;margin:clamp(28px,5vh,52px) auto 0}
-.sketch-section .plate-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--hairline)}
-.sketch-section .plate{
-  display:grid;grid-template-columns:3.4em minmax(0,1fr) auto;gap:18px;align-items:baseline;
-  width:100%;padding:13px 4px;border:0;border-bottom:1px solid var(--hairline);
-  background:transparent;text-align:left;cursor:pointer;color:inherit;font-family:var(--font);
-  transition:background-color .22s ease,padding-left .22s ease;
-}
-.sketch-section .plate:hover,.sketch-section .plate[aria-current="true"]{background:rgba(255,252,244,.5);padding-left:12px}
-.sketch-section .plate .n{font-size:12px;color:var(--ink-faint);letter-spacing:var(--track-nav)}
-.sketch-section .plate .t{font-family:var(--display);font-size:clamp(19px,2.1vw,25px)}
-.sketch-section .plate .p{font-size:12.5px;color:var(--ink-faint);letter-spacing:.04em;font-style:italic;text-align:right}
-.sketch-section .plate[aria-current="true"] .p{color:var(--earth)}
-@media (prefers-reduced-motion:reduce){.sketch-section .sb-wrap{transition:none}}
-/* the spread keeps the source's frame, which leaves empty desk above and below the paper */
-.sketch-section .sb-stage{margin:-7% 0 -8%}
-/* 17 rows is a lot of scrolling: two columns on wide screens, no category on phones */
-@media (min-width:900px){
-  .sketch-section .plate-list{columns:2;column-gap:40px;border-top:0}
-  .sketch-section .plate-list li{break-inside:avoid}
-  .sketch-section .plate{grid-template-columns:2.6em minmax(0,1fr) auto}
-}
-@media (max-width:640px){
-  .sketch-section .plate{grid-template-columns:2.4em minmax(0,1fr)}
-  .sketch-section .plate .p{display:none}
-}
-.sketch-section .plate .p{max-width:13em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the book is pulled up over its own empty frame, so everything under it sits above it */
+.sketch-section .sb-captions,.sketch-section .sb-open,.sketch-section .sb-tools,.sketch-section .sb-hint{position:relative;z-index:85}

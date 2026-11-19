@@ -3,18 +3,23 @@
    Ported from ThreeUI's MengToSketchbookLandingPage: the curled page turn,
    lighting, spring physics, tilt, zoom and loupe are the original code.
    What changed: each spread is drawn in the browser from a featured work
-   (screenshot on the left page, notes on the right) instead of a painted
-   PNG, the intro riffle plays when the section scrolls into view, and the
-   caption opens the project modal.
+   as a hologram in the site's colours (screenshot on the left page, a
+   readout on the right) instead of a painted PNG, the intro riffle plays
+   when the section scrolls into view, and the caption opens the project modal.
    ===================================================================== */
 (function () {
 const SW = 1760, SH = 1240;                    /* spread canvas, same geometry as the source plates */
 const PX0 = 90, PX1 = 1670, PY0 = 270, PY1 = 970, MID = SW / 2;   /* paper: 5.1%..94.9%, 21.8%..78.2% */
-const INK = '#2b2721', SOFT = 'rgba(43,39,33,.62)', FAINT = 'rgba(43,39,33,.40)', EARTH = '#9a6a3e';
-const DISPLAY = '"Instrument Serif", Georgia, serif', BODY = 'Newsreader, Georgia, serif';
+const WHITE = '#f0f4ff', MUTED = '#b0bdd4', DIM = '#6b7fa3', BLUE = '#3b82f6', CYAN = '#60a5fa', GREEN = '#22c55e';
+const DISPLAY = 'Rajdhani, sans-serif', BODY = '"IBM Plex Sans", sans-serif', MONO = '"JetBrains Mono", monospace';
 
-/* ------------------------------------------------ drawing a spread */
+/* ------------------------------------------------ drawing a spread (hologram) */
+const imgCache = new Map();                     /* every screenshot starts downloading at once; drawing waits per page */
 function loadImg(src) {
+  if (!imgCache.has(src)) imgCache.set(src, fetchImg(src));
+  return imgCache.get(src);
+}
+function fetchImg(src) {
   return new Promise(res => {
     if (!src) return res(null);
     const im = new Image();
@@ -39,101 +44,119 @@ function drawLines(ctx, lines, x, y, lh, max) {
   out.forEach((l, i) => ctx.fillText(l, x, y + i * lh));
   return y + out.length * lh;
 }
-function paper(ctx, x0, x1, gutterSide) {
-  ctx.fillStyle = '#f4efe3';
-  ctx.fillRect(x0, PY0, x1 - x0, PY1 - PY0);
-  /* the page dips into the gutter and darkens toward it */
-  const g = gutterSide === 'right'
-    ? ctx.createLinearGradient(x1 - 150, 0, x1, 0) : ctx.createLinearGradient(x0 + 150, 0, x0, 0);
-  g.addColorStop(0, 'rgba(96,72,40,0)'); g.addColorStop(.7, 'rgba(96,72,40,.10)'); g.addColorStop(1, 'rgba(96,72,40,.30)');
-  ctx.fillStyle = g; ctx.fillRect(x0, PY0, x1 - x0, PY1 - PY0);
-  const o = gutterSide === 'right'
-    ? ctx.createLinearGradient(x0, 0, x0 + 40, 0) : ctx.createLinearGradient(x1, 0, x1 - 40, 0);
-  o.addColorStop(0, 'rgba(96,72,40,.10)'); o.addColorStop(1, 'rgba(96,72,40,0)');
-  ctx.fillStyle = o; ctx.fillRect(x0, PY0, x1 - x0, PY1 - PY0);
-}
-function grain(ctx) {
-  /* fixed seed so every spread has the same paper */
-  let s = 7;
-  const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 9000; i++) {
-    ctx.fillStyle = `rgba(90,70,40,${(r() * .07).toFixed(3)})`;
-    ctx.fillRect(PX0 + r() * (PX1 - PX0), PY0 + r() * (PY1 - PY0), 1.4, 1.4);
+function glow(ctx, color, blur) { ctx.shadowColor = color; ctx.shadowBlur = blur; }
+function noGlow(ctx) { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; }
+function brackets(ctx, x0, y0, x1, y1, len, color, w) {
+  ctx.strokeStyle = color; ctx.lineWidth = w;
+  ctx.beginPath();
+  for (const [x, y, dx, dy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) {
+    ctx.moveTo(x, y + dy * len); ctx.lineTo(x, y); ctx.lineTo(x + dx * len, y);
   }
+  ctx.stroke();
 }
-function tape(ctx, x, y, rot) {
-  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
-  ctx.fillStyle = 'rgba(232,220,188,.82)';
-  ctx.fillRect(-48, -15, 96, 30);
-  ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(-48, -15, 96, 8);
-  ctx.restore();
+function panel(ctx, x0, x1, gutterSide) {
+  /* projected light: brighter toward the top, fading at the bottom */
+  const f = ctx.createLinearGradient(0, PY0, 0, PY1);
+  f.addColorStop(0, 'rgba(22,48,92,.62)'); f.addColorStop(1, 'rgba(9,20,42,.50)');
+  ctx.fillStyle = f; ctx.fillRect(x0, PY0, x1 - x0, PY1 - PY0);
+  const g = gutterSide === 'right'
+    ? ctx.createLinearGradient(x1 - 140, 0, x1, 0) : ctx.createLinearGradient(x0 + 140, 0, x0, 0);
+  g.addColorStop(0, 'rgba(2,6,23,0)'); g.addColorStop(1, 'rgba(2,6,23,.45)');
+  ctx.fillStyle = g; ctx.fillRect(x0, PY0, x1 - x0, PY1 - PY0);
+  ctx.strokeStyle = 'rgba(59,130,246,.09)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = x0 + 40; x < x1; x += 40) { ctx.moveTo(x, PY0); ctx.lineTo(x, PY1); }
+  for (let y = PY0 + 40; y < PY1; y += 40) { ctx.moveTo(x0, y); ctx.lineTo(x1, y); }
+  ctx.stroke();
+}
+/* lays tags out as chips; returns the rows used. draw=false only measures */
+function chips(ctx, tags, x, y, maxW, rows, draw) {
+  ctx.font = `400 19px ${MONO}`;
+  let cx = x, row = 0;
+  for (const t of tags) {
+    const w = ctx.measureText(t).width + 26;
+    if (cx + w > x + maxW && cx > x) { cx = x; row++; }
+    if (row >= rows) { row = rows - 1; break; }
+    if (draw) {
+      const cy = y + row * 44;
+      ctx.fillStyle = 'rgba(59,130,246,.10)'; ctx.strokeStyle = 'rgba(96,165,250,.45)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.roundRect(cx, cy, w, 34, 3); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = CYAN; ctx.fillText(t, cx + 13, cy + 24);
+    }
+    cx += w + 10;
+  }
+  return tags.length ? row + 1 : 0;
 }
 async function makeSpread(w, i, total) {
   const c = document.createElement('canvas'); c.width = SW; c.height = SH;
   const ctx = c.getContext('2d');
 
-  /* cloth board peeking out around the paper, then the stack of page edges */
-  ctx.fillStyle = '#5a4634';
-  ctx.beginPath(); ctx.roundRect(PX0 - 18, PY0 - 16, PX1 - PX0 + 36, PY1 - PY0 + 40, 12); ctx.fill();
-  for (let k = 5; k >= 1; k--) {
-    ctx.fillStyle = k % 2 ? '#e2dac8' : '#cfc5b0';
-    ctx.fillRect(PX0 + k * 3, PY1 + k * 3 - 2, (PX1 - PX0) - k * 6, 4);
+  /* light layers under the pages, like the stacked edge of a book */
+  for (let k = 4; k >= 1; k--) {
+    ctx.strokeStyle = `rgba(96,165,250,${(.42 - k * .08).toFixed(2)})`; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(PX0 + k * 5, PY1 + k * 6); ctx.lineTo(PX1 - k * 5, PY1 + k * 6); ctx.stroke();
   }
-  paper(ctx, PX0, MID, 'right');
-  paper(ctx, MID, PX1, 'left');
-  grain(ctx);
+  panel(ctx, PX0, MID, 'right');
+  panel(ctx, MID, PX1, 'left');
+  glow(ctx, 'rgba(59,130,246,.9)', 22);
+  ctx.strokeStyle = 'rgba(96,165,250,.75)'; ctx.lineWidth = 2;
+  ctx.strokeRect(PX0, PY0, PX1 - PX0, PY1 - PY0);
+  ctx.strokeStyle = 'rgba(147,197,253,.85)'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(MID, PY0); ctx.lineTo(MID, PY1); ctx.stroke();
+  noGlow(ctx);
+  brackets(ctx, PX0 - 14, PY0 - 14, PX1 + 14, PY1 + 14, 46, 'rgba(147,197,253,.9)', 3);
 
-  /* left page: the screenshot, taped in */
+  /* left page: the screenshot inside a scanned frame */
   const im = await loadImg(w.img);
   const bx0 = PX0 + 78, bx1 = MID - 70, by0 = PY0 + 84, by1 = PY1 - 128;
-  ctx.save();
-  ctx.translate((bx0 + bx1) / 2, (by0 + by1) / 2); ctx.rotate(-0.014);
   if (im) {
     const k = Math.min((bx1 - bx0) / im.width, (by1 - by0) / im.height);
-    const iw = im.width * k, ih = im.height * k;
-    ctx.shadowColor = 'rgba(60,44,20,.28)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
-    ctx.fillStyle = '#fffdf8'; ctx.fillRect(-iw / 2 - 10, -ih / 2 - 10, iw + 20, ih + 20);
-    ctx.shadowColor = 'transparent';
-    ctx.drawImage(im, -iw / 2, -ih / 2, iw, ih);
-    tape(ctx, -iw / 2 + 26, -ih / 2 - 4, -0.5);
-    tape(ctx, iw / 2 - 26, -ih / 2 - 4, 0.5);
+    const iw = im.width * k, ih = im.height * k, ix = (bx0 + bx1 - iw) / 2, iy = (by0 + by1 - ih) / 2;
+    glow(ctx, 'rgba(59,130,246,.55)', 30);
+    ctx.fillStyle = '#0b0e18'; ctx.fillRect(ix, iy, iw, ih);
+    noGlow(ctx);
+    ctx.globalAlpha = .93; ctx.drawImage(im, ix, iy, iw, ih); ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(59,130,246,.10)'; ctx.fillRect(ix, iy, iw, ih);
+    ctx.fillStyle = 'rgba(2,6,23,.16)';
+    for (let y = iy; y < iy + ih; y += 4) ctx.fillRect(ix, y, iw, 1.5);
+    ctx.strokeStyle = 'rgba(96,165,250,.5)'; ctx.lineWidth = 1.5; ctx.strokeRect(ix, iy, iw, ih);
+    brackets(ctx, ix - 10, iy - 10, ix + iw + 10, iy + ih + 10, 26, GREEN, 2.5);
   } else {
-    ctx.strokeStyle = FAINT; ctx.setLineDash([10, 9]); ctx.lineWidth = 2;
-    ctx.strokeRect(-(bx1 - bx0) / 2, -(by1 - by0) / 2, bx1 - bx0, by1 - by0);
-    ctx.setLineDash([]); ctx.fillStyle = FAINT; ctx.textAlign = 'center';
-    ctx.font = `italic 30px ${BODY}`; ctx.fillText('screenshot coming soon', 0, 10);
+    ctx.strokeStyle = 'rgba(96,165,250,.45)'; ctx.setLineDash([10, 9]); ctx.lineWidth = 2;
+    ctx.strokeRect(bx0, by0, bx1 - bx0, by1 - by0); ctx.setLineDash([]);
+    ctx.fillStyle = DIM; ctx.textAlign = 'center'; ctx.font = `400 24px ${MONO}`;
+    ctx.fillText('// screenshot coming soon', (bx0 + bx1) / 2, (by0 + by1) / 2);
+    ctx.textAlign = 'left';
   }
-  ctx.restore();
-  ctx.textAlign = 'left'; ctx.fillStyle = SOFT;
-  ctx.font = `italic 27px ${BODY}`;
-  ctx.fillText(w.cat || '', bx0, PY1 - 66);
+  ctx.fillStyle = GREEN; ctx.font = `400 22px ${MONO}`;
+  ctx.fillText('// ' + String(w.cat || 'project').toLowerCase().replace(/\s+/g, '_'), bx0, PY1 - 66);
 
-  /* right page: notes in ink */
+  /* right page: the readout */
   const tx = MID + 84, tw = PX1 - 80 - tx;
-  ctx.fillStyle = FAINT; ctx.font = `400 21px ${BODY}`;
-  ctx.fillText(`No. ${String(i + 1).padStart(2, '0')} of ${String(total).padStart(2, '0')}`, tx, PY0 + 92);
-  ctx.fillStyle = INK; ctx.font = `400 76px ${DISPLAY}`;
-  let y = drawLines(ctx, wrapLines(ctx, w.title || '', tw), tx, PY0 + 178, 76, 2);
-  ctx.strokeStyle = 'rgba(43,39,33,.22)'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(tx, y - 30); ctx.quadraticCurveTo(tx + tw * .5, y - 26, tx + tw * .62, y - 31); ctx.stroke();
-  ctx.fillStyle = INK; ctx.font = `300 28px ${BODY}`;
+  ctx.fillStyle = GREEN; ctx.font = `400 21px ${MONO}`;
+  ctx.fillText(`// ${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`, tx, PY0 + 92);
+  glow(ctx, 'rgba(59,130,246,.75)', 18);
+  ctx.fillStyle = WHITE; ctx.font = `700 74px ${DISPLAY}`;
+  const y = drawLines(ctx, wrapLines(ctx, w.title || '', tw), tx, PY0 + 172, 72, 2);
+  noGlow(ctx);
+  const ul = ctx.createLinearGradient(tx, 0, tx + tw * .7, 0);
+  ul.addColorStop(0, BLUE); ul.addColorStop(1, 'rgba(59,130,246,0)');
+  ctx.fillStyle = ul; ctx.fillRect(tx, y - 34, tw * .7, 2.5);
   const desc = String(w.desc || '').replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim();
-  const tags = String(w.tags || '').split(',').map(t => t.trim()).filter(Boolean).join(', ');
-  ctx.font = `400 23px ${BODY}`;
-  const tagLines = wrapLines(ctx, tags, tw).slice(0, 2);
-  const tagTop = PY1 - 70 - tagLines.length * 32;
-  ctx.font = `300 28px ${BODY}`;
-  const room = Math.max(1, Math.floor((tagTop - 40 - (y + 10)) / 42));
-  drawLines(ctx, wrapLines(ctx, desc, tw), tx, y + 18, 42, room);
-  if (tags) {
-    ctx.fillStyle = EARTH; ctx.font = `italic 22px ${BODY}`; ctx.fillText('Built with', tx, tagTop);
-    ctx.fillStyle = SOFT; ctx.font = `400 23px ${BODY}`;
-    tagLines.forEach((l, k) => ctx.fillText(l, tx, tagTop + 34 + k * 32));
+  const tags = String(w.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+  const tagRows = chips(ctx, tags, tx, 0, tw, 2, false);
+  const tagTop = PY1 - 72 - tagRows * 44;
+  ctx.fillStyle = MUTED; ctx.font = `300 26px ${BODY}`;
+  const room = Math.max(1, Math.floor((tagTop - 42 - (y + 6)) / 40));
+  drawLines(ctx, wrapLines(ctx, desc, tw), tx, y + 14, 40, room);
+  if (tags.length) {
+    ctx.fillStyle = GREEN; ctx.font = `400 19px ${MONO}`; ctx.fillText('built_with:', tx, tagTop);
+    chips(ctx, tags, tx, tagTop + 14, tw, 2, true);
   }
   /* folios */
-  ctx.fillStyle = FAINT; ctx.font = `400 19px ${BODY}`;
-  ctx.fillText(String(i * 2 + 1), PX0 + 40, PY1 - 30);
-  ctx.textAlign = 'right'; ctx.fillText(String(i * 2 + 2), PX1 - 40, PY1 - 30);
+  ctx.fillStyle = DIM; ctx.font = `400 17px ${MONO}`;
+  ctx.fillText(String(i * 2 + 1).padStart(2, '0'), PX0 + 40, PY1 - 30);
+  ctx.textAlign = 'right'; ctx.fillText(String(i * 2 + 2).padStart(2, '0'), PX1 - 40, PY1 - 30);
 
   try {
     const blob = await new Promise(r => c.toBlob(r, 'image/webp', .92));
@@ -149,11 +172,17 @@ window.initSketchbook = async function (works) {
 const wrap = document.getElementById('sbWrap');
 if (!wrap || !works.length || wrap.dataset.built) return;   /* home re-renders on every visit; build once */
 wrap.dataset.built = '1';
-await Promise.all([`400 76px ${DISPLAY}`, `italic 30px ${BODY}`, `300 28px ${BODY}`, `400 23px ${BODY}`]
+await Promise.all([`700 74px ${DISPLAY}`, `300 26px ${BODY}`, `400 19px ${MONO}`]
   .map(f => document.fonts.load(f).catch(() => {})));
-const PAGES = await Promise.all(works.map(async (w, i) =>
-  ({ id: w._id, title: w.title, place: w.cat || '', url: await makeSpread(w, i, works.length) })));
+const PAGES = works.map(w => ({ id: w._id, title: w.title, place: w.cat || '', url: null }));
 const M = PAGES.length, LAND = 0;
+/* Drawing and encoding every spread takes seconds, so show the book once the
+   first page and its neighbours exist, and draw the rest in the background. */
+works.forEach(w => loadImg(w.img));
+const build = i => makeSpread(works[i], i, M).then(u => { PAGES[i].url = u; });
+const first = [...new Set([0, 1 % M])];
+await Promise.all(first.map(build));
+const allDrawn = (async () => { for (let i = 0; i < M; i++) if (!first.includes(i)) await build(i); })();
 
 const stage = document.getElementById('sbStage');
 const sb3d = document.getElementById('sb3d');
@@ -245,7 +274,6 @@ function paint() {
   book.appendChild(a); book.appendChild(b);
   layout();
   caption();
-  marks();
   syncZoomLayer();
   placeLoupe();
 }
@@ -402,9 +430,10 @@ stage.addEventListener('pointercancel', endDrag);
 function startTurn(dir, t) {
   spring = null;
   if (turn) { idx = turn.to; turn = null; }
+  const from = idx, to = dir === 'next' ? (from + 1) % M : (from - 1 + M) % M;
+  if (!PAGES[to].url) return;                    /* that page is still being drawn */
   shoveLoupe(dir);
-  const from = idx;
-  turn = { dir: dir, from: from, to: dir === 'next' ? (from + 1) % M : (from - 1 + M) % M, t: t || 0 };
+  turn = { dir: dir, from: from, to: to, t: t || 0 };
   paint();
 }
 function commit() {
@@ -422,14 +451,6 @@ function step(dir) {
   if (introOn) endIntro();
   if (turn) { idx = turn.to; turn = null; }
   startTurn(dir, 0); commit();
-}
-function goTo(i) {
-  if (introOn) endIntro();
-  if (i === idx) return;
-  if (turn) { idx = turn.to; turn = null; }
-  const fwd = (i - idx + M) % M, back = (idx - i + M) % M;
-  if (Math.min(fwd, back) === 1) { step(fwd === 1 ? 'next' : 'prev'); return; }
-  idx = i; paint();
 }
 document.getElementById('sbLeft').onclick = () => step('prev');
 document.getElementById('sbRight').onclick = () => step('next');
@@ -549,23 +570,6 @@ function syncZoom() {
 zInBtn.onclick = () => { setView(view.trx, view.try_, view.tz * 1.16); hideHint(); };
 zOutBtn.onclick = () => { setView(view.trx, view.try_, view.tz / 1.16); hideHint(); };
 
-/* --------------------------------------------------------- the index */
-const plateList = document.getElementById('plateList');
-plateList.textContent = '';
-PAGES.forEach((p, i) => {
-  const li = el('li');
-  const b = el('button', 'plate');
-  b.innerHTML = '<span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t"></span><span class="p"></span>';
-  b.querySelector('.t').textContent = p.title;
-  b.querySelector('.p').textContent = p.place;
-  b.onclick = () => { goTo(i); document.getElementById('sbWrap').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
-  li.appendChild(b); plateList.appendChild(li);
-});
-function marks() {
-  const cur = turn ? turn.to : idx;
-  plateList.querySelectorAll('.plate').forEach((b, i) => b.setAttribute('aria-current', i === cur ? 'true' : 'false'));
-}
-
 /* ---------------------------------------------------------- the riffle */
 let riffle = null, riffleAt = 0, introOn = false;
 function endIntro() { introOn = false; wrap.classList.remove('intro', 'b2'); }
@@ -603,7 +607,7 @@ let played = false;
 new IntersectionObserver(([e]) => {
   inView = e.isIntersecting;
   if (!inView) { setView(0, 0, view.tz); return; }
-  if (!played) { played = true; setTimeout(startIntro, 220); }
+  if (!played) { played = true; allDrawn.then(() => setTimeout(startIntro, 220)); }
 }, { threshold: 0.35 }).observe(stage);
 };
 })();
