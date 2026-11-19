@@ -319,57 +319,6 @@ body::before {
 .t-blue { color: var(--blue); }
 .t-highlight { color: var(--green); }
 
-/* ---- CAROUSEL ---- */
-.carousel-section { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.carousel-wrapper { position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); }
-.carousel-track { display: flex; transition: transform .55s cubic-bezier(0.4,0,0.2,1); }
-.carousel-slide {
-  min-width: 100%; display: grid;
-  grid-template-columns: 1.2fr 1fr;
-}
-.carousel-slide:hover .carousel-img { transform: scale(1.03); }
-.carousel-img {
-  height: 480px; background-size: cover; background-position: center;
-  overflow: hidden; position: relative; transition: transform .4s ease;
-}
-.carousel-img::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent 40%, var(--bg2) 100%);
-}
-.carousel-info {
-  background: var(--bg2); padding: 3rem 2.5rem;
-  display: flex; flex-direction: column; justify-content: center; gap: .75rem;
-}
-.carousel-cat { font-family: var(--font-mono); font-size: .7rem; color: var(--green); letter-spacing: .15em; }
-.carousel-info h3 { font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; line-height: 1.15; }
-.carousel-info p { color: var(--white); opacity: 0.85; font-size: .88rem; }
-.carousel-tech { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .5rem; }
-.carousel-tech span {
-  font-family: var(--font-mono); font-size: .65rem;
-  padding: .15rem .5rem; background: var(--bg3); border: 1px solid var(--border2);
-  border-radius: 2px; color: var(--blue);
-}
-.carousel-cta { font-family: var(--font-mono); color: var(--green); font-size: .78rem; margin-top: .25rem; }
-
-.carousel-btn {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  width: 42px; height: 42px; border-radius: var(--radius);
-  background: rgba(11,14,24,0.85); backdrop-filter: blur(8px);
-  border: 1px solid var(--border2); color: var(--white); font-size: 1rem;
-  display: flex; align-items: center; justify-content: center; z-index: 5;
-  transition: border-color var(--transition), box-shadow var(--transition);
-}
-.carousel-btn:hover { border-color: var(--blue); box-shadow: 0 0 12px var(--blue-glow); }
-.carousel-btn.prev { left: 1rem; }
-.carousel-btn.next { right: 1rem; }
-
-.carousel-dots { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; gap: .4rem; z-index: 5; }
-.dot-btn {
-  width: 5px; height: 5px; border-radius: 50%; background: var(--dim);
-  border: none; transition: background var(--transition), width var(--transition);
-}
-.dot-btn.active { background: var(--blue); width: 18px; border-radius: 2px; box-shadow: 0 0 8px var(--blue-glow); }
-
 /* ---- STATS ---- */
 .stats-section { background: var(--bg); }
 .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.5rem; }
@@ -712,8 +661,6 @@ footer {
   .hero-status { display: none; }
   .hero-scroll-hint { display: none; }
   .stats-grid { grid-template-columns: repeat(2,1fr); }
-  .carousel-slide { grid-template-columns: 1fr; }
-  .carousel-img { height: 260px; }
   .about-grid { grid-template-columns: 1fr; gap: 3rem; }
   .about-image-wrap { position: static; max-width: 300px; }
   .dash-cards { grid-template-columns: 1fr; }
@@ -979,8 +926,6 @@ footer {
 /* ---- WORK CARD TILT — keep border + shadow transitions ---- */
 .work-card { transform-style: preserve-3d; will-change: transform; }
 
-/* ---- CAROUSEL SLIDE HOVER ---- */
-.carousel-slide { transition: transform 0.55s cubic-bezier(0.23,1,0.32,1); }
 
 /* ---- HERO PROMPT CURSOR BLINK ---- */
 .prompt-cursor {
@@ -1086,7 +1031,6 @@ footer {
 /* sections scroll over the fixed 3D stage; the top of Selected Builds is see-through so its
    heading lands on the fading room instead of on a flat panel */
 .hero.has-3d ~ .section, .hero.has-3d ~ .cta-banner { position: relative; z-index: 2; }
-.hero.has-3d + .carousel-section { background: linear-gradient(to bottom, transparent 0, transparent 30vh, var(--bg2) 70vh); border-top-color: transparent; }
 .hero.has-3d .avail-badge { align-self: flex-start; }
 .hero.has-3d .hero-scroll-hint { bottom: auto; top: calc(100vh - 3rem); }
 @media (max-width: 900px) {

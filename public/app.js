@@ -3,8 +3,6 @@
 // ============================================================
 
 let currentPage = 'home';
-let carouselIndex = 0;
-let carouselItems = [];
 let selectedStars = 5;
 
 // Visitor-submitted text must never become markup.
@@ -52,7 +50,7 @@ function navigate(page) {
 
 // ---- HOME ----
 async function renderHome() {
-  await renderCarousel();
+  renderCarousel();   // drawing the book's pages takes a moment; don't hold up the rest of home
   await renderReviewsMarquee();
   await renderHeroStack();
   await renderStats();
@@ -102,48 +100,14 @@ async function renderHeroStack() {
   } catch {}
 }
 
-// ---- CAROUSEL ----
+// ---- SELECTED BUILDS (sketchbook, see sketchbook.js) ----
 async function renderCarousel() {
-  try {
-    carouselItems = await DB.getFeaturedWorks();
-  } catch { carouselItems = []; }
-  const track = document.getElementById('carouselTrack');
-  const dots  = document.getElementById('carouselDots');
-  if (!track || !carouselItems.length) return;
-  const fallback = 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800';
-  track.innerHTML = carouselItems.map(w => {
-    const tags = (w.tags || '').split(',').map(t => `<span>${t.trim()}</span>`).join('');
-    return `
-      <div class="carousel-slide" onclick="openModal('${w._id}')">
-        <div class="carousel-img" style="background-image:url('${w.img || fallback}')"></div>
-        <div class="carousel-info">
-          <span class="carousel-cat">${w.cat}</span>
-          <h3>${w.title}</h3>
-          <p>${w.desc.substring(0, 100)}...</p>
-          <div class="carousel-tech">${tags}</div>
-          <span class="carousel-cta">// view_project →</span>
-        </div>
-      </div>`;
-  }).join('');
-  dots.innerHTML = carouselItems.map((_, i) =>
-    `<span class="dot-btn ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></span>`
-  ).join('');
-  carouselIndex = 0;
-  updateCarousel();
+  let items = [];
+  try { items = await DB.getFeaturedWorks(); } catch {}
+  // admin-picked highlights lead the book, in their chosen order
+  items.sort((a, b) => (+a.highlight || 99) - (+b.highlight || 99));
+  await window.initSketchbook(items);
 }
-
-function moveCarousel(dir) {
-  carouselIndex = (carouselIndex + dir + carouselItems.length) % carouselItems.length;
-  updateCarousel();
-}
-function goToSlide(i) { carouselIndex = i; updateCarousel(); }
-function updateCarousel() {
-  const track = document.getElementById('carouselTrack');
-  if (!track) return;
-  track.style.transform = `translateX(-${carouselIndex * 100}%)`;
-  document.querySelectorAll('.dot-btn').forEach((d, i) => d.classList.toggle('active', i === carouselIndex));
-}
-setInterval(() => { if (currentPage === 'home' && carouselItems.length > 1) moveCarousel(1); }, 5500);
 
 // ---- STATS ----
 function animateStats() {
